@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมออมทรัพย์โรงเรียน (Secure & Role-Based Version)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- เพิ่มไลบรารี SheetJS สำหรับอ่านไฟล์ Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+        .staff-only { display: none; }
+        body.is-staff .staff-only { display: block; }
+        body.is-staff .staff-flex { display: flex; }
+        .admin-only { display: none; }
+        body.is-admin .admin-only { display: block; }
+        .glass-morphism { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <!-- ครอบเนื้อหาหลักเพื่อซ่อนตอนสั่งพิมพ์ (Print) -->
+    <div id="app-container" class="print:hidden max-w-4xl mx-auto p-4 md:p-6">
+        <!-- Header -->
+        <header class="glass-morphism rounded-3xl shadow-sm p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-white">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="text-center md:text-left">
+                    <h1 class="text-2xl font-bold text-slate-800 tracking-tight">ระบบออมทรัพย์นักเรียน</h1>
+                    <p class="text-slate-500 text-sm">โรงเรียนบ้านแม่เมย ประจำปีการศึกษา 2569</p>
+                </div>
+            </div>
+            <div id="auth-section">
+                <button id="btn-login-trigger" onclick="toggleLoginModal(true)" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-700 transition-all active:scale-95">
+                    เข้าสู่ระบบเจ้าหน้าที่ / ครู
+                </button>
+                <div id="admin-info" class="hidden items-center gap-4">
+                    <div class="flex flex-col text-right">
+                        <div class="flex items-center gap-2 justify-end">
+                            <span class="relative flex h-3 w-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <span id="user-role-badge" class="text-xs font-bold text-emerald-600">Online</span>
+                        </div>
+                        <span id="user-display-name" class="text-xs text-slate-500 font-medium"></span>
+                    </div>
+                    <button onclick="logout()" class="text-rose-500 text-sm font-bold hover:bg-rose-50 px-3 py-1.5 rounded-lg transition">ออกจากระบบ</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex bg-white rounded-2xl shadow-sm mb-6 p-1 border border-slate-100">
+            <button onclick="switchTab('main')" id="tab-main" class="flex-1 py-3 text-center rounded-xl transition tab-active">หน้าหลัก</button>
+            <button onclick="switchTab('summary')" id="tab-summary" class="flex-1 py-3 text-center rounded-xl transition hover:bg-slate-50">สรุปผล</button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="staff-only flex-1 py-3 text-center rounded-xl transition hover:bg-slate-50">จัดการระบบ</button>
+        </nav>
+
+        <main>
+            <!-- Tab: Main -->
+            <section id="section-main" class="space-y-6">
+                <!-- Check Balance -->
+                <div class="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <span class="w-2 h-6 bg-blue-600 rounded-full"></span>
+                        ตรวจสอบยอดเงิน
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ระดับชั้นเรียน</label>
+                            <select id="select-class" onchange="filterStudentsByClass()" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 transition-all font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+                                <option value="all">ทุกชั้นเรียน</option>
+                                <option value="อนุบาล 2">อนุบาล 2</option>
+                                <option value="อนุบาล 3">อนุบาล 3</option>
+                                <option value="ป.1">ประถมศึกษาปีที่ 1</option>
+                                <option value="ป.2">ประถมศึกษาปีที่ 2</option>
+                                <option value="ป.3">ประถมศึกษาปีที่ 3</option>
+                                <option value="ป.4">ประถมศึกษาปีที่ 4</option>
+                                <option value="ป.5">ประถมศึกษาปีที่ 5</option>
+                                <option value="ป.6">ประถมศึกษาปีที่ 6</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ชื่อนักเรียน</label>
+                            <select id="select-student" onchange="showStudentBalance()" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 transition-all font-medium">
+                                <option value="">-- ค้นหาชื่อนักเรียน --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Balance Display -->
+                    <div id="student-info" class="hidden bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[2.5rem] mb-8 text-center shadow-xl shadow-blue-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <p class="text-blue-100 text-sm font-medium mb-2">ยอดเงินคงเหลือในบัญชี</p>
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="text-2xl text-white/70 font-bold">฿</span>
+                            <span id="display-balance" class="text-5xl font-black text-white tracking-tight">0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Admin/Teacher: Deposit/Withdraw -->
+                    <div class="staff-only bg-slate-50 rounded-3xl p-6 border-2 border-dashed border-slate-200">
+                        <div class="flex items-center gap-2 mb-4 text-slate-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                            </svg>
+                            <h3 class="font-bold text-sm uppercase tracking-widest">ทำรายการ ฝาก/ถอน (เฉพาะสิทธิ์ของท่าน)</h3>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="relative flex-1">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">฿</span>
+                                <input type="number" id="input-amount" placeholder="ระบุจำนวนเงิน" class="w-full pl-10 pr-4 py-4 bg-white border-none rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 font-bold text-lg">
+                            </div>
+                            <button onclick="processTransaction('deposit')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-100 active:scale-95">ฝากเงิน</button>
+                            <button onclick="processTransaction('withdraw')" class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-rose-100 active:scale-95">ถอนเงิน</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions -->
+                <div class="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold">รายการล่าสุดวันนี้</h2>
+                        <div class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse">
+                            Live Sync
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-slate-400 text-[11px] font-bold uppercase tracking-widest text-left">
+                                    <th class="pb-4 pl-2">เวลา</th>
+                                    <th class="pb-4">นักเรียน</th>
+                                    <th class="pb-4">ประเภท</th>
+                                    <th class="pb-4 text-right pr-2">จำนวน (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-transactions" class="divide-y divide-slate-50">
+                                <!-- Data will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Summary -->
+            <section id="section-summary" class="hidden space-y-6">
+                <!-- Today's Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl p-6 text-white shadow-lg shadow-emerald-200">
+                        <p class="text-emerald-100 text-sm font-bold mb-1">ยอดฝากรวมวันนี้</p>
+                        <div class="text-3xl font-black">฿ <span id="summary-today-deposit">0.00</span></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-3xl p-6 text-white shadow-lg shadow-rose-200">
+                        <p class="text-rose-100 text-sm font-bold mb-1">ยอดถอนรวมวันนี้</p>
+                        <div class="text-3xl font-black">฿ <span id="summary-today-withdraw">0.00</span></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200">
+                        <p class="text-blue-100 text-sm font-bold mb-1">ยอดเงินหมุนเวียนสุทธิ</p>
+                        <div class="text-3xl font-black">฿ <span id="summary-today-net">0.00</span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                        <h2 class="text-lg font-bold mb-6">สัดส่วนเงินออมรายชั้น</h2>
+                        <div class="aspect-square">
+                            <canvas id="chart-pie-class"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                        <h2 class="text-lg font-bold mb-6">ยอดรวมเงินออมรายชั้น</h2>
+                        <div class="aspect-square flex items-end">
+                            <canvas id="chart-bar-class"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Admin (Admin & Teacher Views) -->
+            <section id="section-admin" class="hidden space-y-6">
+                <!-- Registration Section (Staff Only) -->
+                <div class="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6">ลงทะเบียนนักเรียนใหม่</h2>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input type="text" id="admin-name" placeholder="ชื่อ-นามสกุลนักเรียน" class="flex-[2] p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                        <select id="admin-class" class="flex-1 p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium disabled:opacity-60">
+                            <option value="อนุบาล 2">อนุบาล 2</option>
+                            <option value="อนุบาล 3">อนุบาล 3</option>
+                            <option value="ป.1">ป.1</option>
+                            <option value="ป.2">ป.2</option>
+                            <option value="ป.3">ป.3</option>
+                            <option value="ป.4">ป.4</option>
+                            <option value="ป.5">ป.5</option>
+                            <option value="ป.6">ป.6</option>
+                        </select>
+                        <button onclick="addStudent()" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">บันทึก</button>
+                    </div>
+                </div>
+
+                <!-- Manage Teachers (Admin Only) -->
+                <div class="admin-only bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6">จัดการบัญชีครูประจำชั้น (Admin Only)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ชั้นเรียนที่รับผิดชอบ</label>
+                            <select id="admin-teacher-class" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                                <option value="อนุบาล 2">อนุบาล 2</option>
+                                <option value="อนุบาล 3">อนุบาล 3</option>
+                                <option value="ป.1">ป.1</option>
+                                <option value="ป.2">ป.2</option>
+                                <option value="ป.3">ป.3</option>
+                                <option value="ป.4">ป.4</option>
+                                <option value="ป.5">ป.5</option>
+                                <option value="ป.6">ป.6</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ชื่อ-นามสกุล ครูประจำชั้น</label>
+                            <input type="text" id="admin-teacher-name" placeholder="ชื่อครูประจำชั้น" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Gmail (สำหรับล็อกอิน)</label>
+                            <input type="email" id="admin-teacher-email" placeholder="example@gmail.com" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">รหัสผ่านเข้าใช้งาน</label>
+                            <input type="password" id="admin-teacher-password" placeholder="อย่างน้อย 6 หลัก" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none font-medium">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 mb-6">
+                        <button onclick="saveTeacher()" class="bg-emerald-600 text-white px-6 py-4 rounded-2xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all">บันทึก/แก้ไขข้อมูลครู</button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-3 rounded-tl-xl w-24">ชั้นเรียน</th>
+                                    <th class="px-4 py-3">ครูประจำชั้น</th>
+                                    <th class="px-4 py-3">Gmail</th>
+                                    <th class="px-4 py-3 rounded-tr-xl text-right w-24">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-teachers" class="divide-y divide-slate-100">
+                                <!-- Data will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Tools: Excel, Backup, Print -->
+                <div class="admin-only bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6">เครื่องมือขั้นสูง (Admin Tools)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 transition cursor-pointer relative group">
+                            <input type="file" id="file-import" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx, .xls, .csv" onchange="importExcel(event)">
+                            <div class="text-blue-500 mb-3 transform group-hover:scale-110 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-700">นำเข้าจาก Excel</h3>
+                            <p class="text-xs text-slate-500 mt-1">ใช้คอลัมน์: 'ชื่อ', 'ชั้น'</p>
+                        </div>
+                        <button onclick="exportBackup()" class="border-2 border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 transition group">
+                            <div class="text-emerald-500 mb-3 transform group-hover:scale-110 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-700">สำรองข้อมูลระบบ</h3>
+                            <p class="text-xs text-slate-500 mt-1">ดาวน์โหลดเป็นไฟล์ JSON</p>
+                        </button>
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 transition cursor-pointer relative group">
+                            <input type="file" id="file-restore" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".json" onchange="restoreBackup(event)">
+                            <div class="text-purple-500 mb-3 transform group-hover:scale-110 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-700">กู้คืนระบบ (Restore)</h3>
+                            <p class="text-xs text-slate-500 mt-1">อัปโหลดไฟล์ JSON ที่สำรองไว้</p>
+                        </div>
+                        <button onclick="generatePrintReport()" class="border-2 border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 transition group">
+                            <div class="text-rose-500 mb-3 transform group-hover:scale-110 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-700">พิมพ์รายงาน / PDF</h3>
+                            <p class="text-xs text-slate-500 mt-1">พิมพ์ใบสรุปยอดปัจจุบัน</p>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="mt-12 text-center text-slate-400 text-xs pb-10">
+            <p class="font-bold mb-1 italic">© 2026 School Savings Management System</p>
+            <p>Database: Firebase Firestore | Status: Secure Connection | Power By ครูเบลล์</p>
+        </footer>
+    </div>
+    
+    <!-- พื้นที่สำหรับแสดงข้อมูลเฉพาะตอนพิมพ์เท่านั้น -->
+    <div id="print-area" class="hidden print:block bg-white text-black p-8 absolute top-0 left-0 w-full min-h-screen z-[9999]"></div>
+
+    <!-- Login Modal (Now requiring Gmail & Password) -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200">
+            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">เข้าสู่ระบบ</h2>
+            <p class="text-slate-400 text-sm mb-6">ล็อกอินด้วยบัญชี Gmail ของท่าน</p>
+            
+            <div class="space-y-4 mb-6">
+                <input type="email" id="login-email" placeholder="ชื่อผู้ใช้ หรือ Gmail" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 font-medium text-center">
+                <input type="password" id="login-pass" placeholder="รหัสผ่าน" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 font-bold text-center">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="toggleLoginModal(false)" class="py-4 text-slate-400 font-bold hover:text-slate-600 transition">ยกเลิก</button>
+                <button onclick="handleLogin()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="status-container" class="fixed bottom-6 right-6 z-[200] flex flex-col items-end"></div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, addDoc, Timestamp, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_Fc_Xv0IolPdgk_BaefSMjJNYdLDy_aE",
+            authDomain: "school-savings-app.firebaseapp.com",
+            projectId: "school-savings-app",
+            storageBucket: "school-savings-app.firebasestorage.app",
+            messagingSenderId: "236262762186",
+            appId: "1:236262762186:web:708ad1d4cb098cdbb3b633"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'school-savings-secure-v2'; // ใช้ชื่อนี้ได้เลย
+
+        // Internal State
+        let students = [];
+        let transactions = [];
+        let teachers = [];
+        let isStaff = false; // Logged in as Teacher or Admin
+        let userRole = 'public'; // 'public', 'teacher', 'admin'
+        let assignedClass = null; // Assigned class for teacher
+        let currentUser = null; // Firebase Auth User
+        let pieChart, barChart;
+
+        // Unsubscribe functions to cleanup listeners cleanly
+        let unsubscribeStudents = null;
+        let unsubscribeTransactions = null;
+        let unsubscribeTeachers = null;
+
+        // Initialize Application
+        const init = async () => {
+            try {
+                // Set up observer for auth state changes BEFORE calling queries (RULE 3)
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) {
+                        // Start listeners only after auth is confirmed
+                        startDataListeners();
+                    } else {
+                        cleanupListeners();
+                    }
+                });
+
+                // Restore session from localStorage if present
+                const storedRole = localStorage.getItem('user_role');
+                const storedClass = localStorage.getItem('assigned_class');
+                const storedEmail = localStorage.getItem('user_email');
+                if (storedRole) {
+                    userRole = storedRole;
+                    assignedClass = storedClass;
+                    isStaff = (userRole === 'admin' || userRole === 'teacher');
+                    setStaffUI(isStaff, userRole, assignedClass, storedEmail);
+                }
+
+                // RULE 3: Auth Before Queries - await authentication completion
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    // Try to sign in anonymously if there's no pre-existing login session
+                    await signInAnonymously(auth);
+                }
+
+            } catch (err) {
+                console.error("Auth Error:", err);
+                showToast("ระบบขัดข้องในการยืนยันตัวตน", "error");
+            }
+        };
+
+        const startDataListeners = () => {
+            cleanupListeners(); // Clean old ones if any
+            listenToStudents();
+            listenToTransactions();
+            listenToTeachers();
+        };
+
+        const cleanupListeners = () => {
+            if (unsubscribeStudents) { unsubscribeStudents(); unsubscribeStudents = null; }
+            if (unsubscribeTransactions) { unsubscribeTransactions(); unsubscribeTransactions = null; }
+            if (unsubscribeTeachers) { unsubscribeTeachers(); unsubscribeTeachers = null; }
+        };
+
+        // Real-time Database Listeners
+        const listenToStudents = () => {
+            if (!currentUser) return; // Guard
+            // RULE 1: Strict Paths
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'students');
+            unsubscribeStudents = onSnapshot(q, (snapshot) => {
+                students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateStudentDropdown();
+                if (document.getElementById('section-summary').style.display !== 'none') renderCharts();
+            }, (err) => {
+                console.error("Firestore Students Error:", err);
+            });
+        };
+
+        const listenToTransactions = () => {
+            if (!currentUser) return; // Guard
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
+            unsubscribeTransactions = onSnapshot(q, (snapshot) => {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+
+                // RULE 2: No Complex Queries (Filter in memory)
+                transactions = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(t => t.timestamp?.toDate() >= today) 
+                    .sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
+                
+                renderTransactionsTable();
+                updateTodaySummary();
+            }, (err) => {
+                console.error("Firestore Transactions Error:", err);
+            });
+        };
+
+        const listenToTeachers = () => {
+            if (!currentUser) return;
+            // Only fetch teachers data if user is actually staff (Admin/Teacher) to avoid permission errors
+            if (userRole !== 'admin' && userRole !== 'teacher') {
+                teachers = [];
+                renderTeachersTable();
+                return;
+            }
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'teachers');
+            unsubscribeTeachers = onSnapshot(q, (snapshot) => {
+                teachers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTeachersTable();
+            }, (err) => {
+                console.error("Firestore Teachers Error:", err);
+            });
+        };
+
+        // Authentication Handlers
+        window.toggleLoginModal = (show) => {
+            const modal = document.getElementById('login-modal');
+            modal.classList.toggle('hidden', !show);
+            modal.classList.toggle('flex', show);
+            if (show) document.getElementById('login-email').focus();
+        };
+
+        window.handleLogin = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+
+            if (!email || !pass) {
+                return showToast("กรุณากรอกข้อมูลให้ครบถ้วน", "error");
+            }
+
+            // Ensure we are fully authenticated first (Anonymously or existing session)
+            if (!currentUser) {
+                return showToast("แอปพลิเคชันกำลังเชื่อมต่อระบบความปลอดภัย กรุณาลองใหม่อีกครั้ง", "error");
+            }
+
+            // Check if login is special Admin role
+            if (email === 'admin@school.com' && pass === 'admin1234') {
+                userRole = 'admin';
+                assignedClass = null;
+                isStaff = true;
+                setStaffUI(true, 'admin', null, email);
+                saveSession('admin', null, email);
+                
+                // Restart listeners to fetch authorized teacher database
+                startDataListeners();
+                
+                toggleLoginModal(false);
+                clearLoginFields();
+                showToast("เข้าสู่ระบบแอดมินสำเร็จ", "success");
+                return;
+            }
+
+            // Otherwise check credentials in the teachers collection
+            try {
+                const teachersRef = collection(db, 'artifacts', appId, 'public', 'data', 'teachers');
+                const querySnapshot = await getDocs(teachersRef);
+                let matchedTeacher = null;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.email && data.email.toLowerCase() === email.toLowerCase() && data.password === pass) {
+                        matchedTeacher = { id: doc.id, ...data };
+                    }
+                });
+
+                if (matchedTeacher) {
+                    userRole = 'teacher';
+                    assignedClass = matchedTeacher.class;
+                    isStaff = true;
+                    setStaffUI(true, 'teacher', assignedClass, email);
+                    saveSession('teacher', assignedClass, email);
+                    
+                    // Restart listeners to fetch authorized data
+                    startDataListeners();
+                    
+                    toggleLoginModal(false);
+                    clearLoginFields();
+                    showToast(`ยินดีต้อนรับ คุณครู ${matchedTeacher.name}`, "success");
+                } else {
+                    showToast("อีเมลหรือรหัสผ่านไม่ถูกต้อง", "error");
+                }
+            } catch (err) {
+                console.error("Login Query Error:", err);
+                showToast("สิทธิ์เข้าใช้งานไม่เพียงพอหรือไม่พบข้อมูลบัญชี", "error");
+            }
+        };
+
+        const saveSession = (role, cls, email) => {
+            localStorage.setItem('user_role', role);
+            if (cls) localStorage.setItem('assigned_class', cls);
+            else localStorage.removeItem('assigned_class');
+            localStorage.setItem('user_email', email);
+        };
+
+        const clearLoginFields = () => {
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-pass').value = '';
+        };
+
+        window.logout = async () => {
+            try {
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('assigned_class');
+                localStorage.removeItem('user_email');
+                
+                userRole = 'public';
+                assignedClass = null;
+                isStaff = false;
+                setStaffUI(false, 'public', null, '');
+                
+                cleanupListeners();
+                
+                // Re-sign in anonymously for safe read
+                await signInAnonymously(auth);
+                
+                showToast("ออกจากระบบแล้ว", "success");
+                switchTab('main');
+            } catch (err) {
+                console.error("Logout Error:", err);
+            }
+        };
+
+        const setStaffUI = (active, role, cls, email) => {
+            isStaff = active;
+            userRole = role;
+            assignedClass = cls;
+
+            const selectClass = document.getElementById('select-class');
+            const adminClass = document.getElementById('admin-class');
+
+            if (active) {
+                document.body.classList.add('is-staff');
+                document.getElementById('btn-login-trigger').classList.add('hidden');
+                document.getElementById('admin-info').classList.replace('hidden', 'flex');
+
+                const welcomeRole = role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : `คุณครูประจำชั้น (${cls})`;
+                document.getElementById('user-role-badge').textContent = welcomeRole;
+                document.getElementById('user-display-name').textContent = email;
+
+                if (role === 'admin') {
+                    document.body.classList.add('is-admin');
+                    selectClass.disabled = false;
+                    adminClass.disabled = false;
+                } else {
+                    document.body.classList.remove('is-admin');
+                    // Lock teacher class to their assigned class
+                    selectClass.value = cls;
+                    selectClass.disabled = true;
+                    adminClass.value = cls;
+                    adminClass.disabled = true;
+                }
+            } else {
+                document.body.classList.remove('is-staff');
+                document.body.classList.remove('is-admin');
+                document.getElementById('btn-login-trigger').classList.remove('hidden');
+                document.getElementById('admin-info').classList.replace('flex', 'hidden');
+                
+                selectClass.disabled = false;
+                adminClass.disabled = false;
+            }
+            updateStudentDropdown();
+        };
+
+        // Business Logic
+        window.processTransaction = async (type) => {
+            if (!isStaff || !currentUser) return showToast("ต้องการสิทธิ์เจ้าหน้าที่/คุณครู", "error");
+            
+            const studentId = document.getElementById('select-student').value;
+            const amountStr = document.getElementById('input-amount').value;
+            const amount = parseFloat(amountStr);
+            
+            if (!studentId || isNaN(amount) || amount <= 0) {
+                return showToast("กรุณาระบุจำนวนเงินให้ถูกต้อง", "error");
+            }
+
+            const student = students.find(s => s.id === studentId);
+            if (!student) return showToast("ไม่พบข้อมูลนักเรียน", "error");
+
+            // Teacher Permission Check (Can only edit assigned class)
+            if (userRole === 'teacher' && student.class !== assignedClass) {
+                return showToast(`ท่านมีสิทธิ์จัดการเฉพาะนักเรียนชั้น ${assignedClass} เท่านั้น`, "error");
+            }
+
+            if (type === 'withdraw' && student.balance < amount) {
+                return showToast("ยอดเงินไม่พอสำหรับการถอน", "error");
+            }
+
+            const newBalance = type === 'deposit' ? student.balance + amount : student.balance - amount;
+
+            try {
+                const studentRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', studentId);
+                await updateDoc(studentRef, { balance: newBalance });
+
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                    studentId,
+                    studentName: student.name,
+                    class: student.class,
+                    type: type === 'deposit' ? 'ฝาก' : 'ถอน',
+                    amount,
+                    timestamp: Timestamp.now()
+                });
+
+                document.getElementById('input-amount').value = '';
+                showToast(`บันทึก${type === 'deposit' ? 'ฝาก' : 'ถอน'}เงินสำเร็จ`, "success");
+            } catch (e) {
+                console.error("Transaction write error:", e);
+                showToast("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่", "error");
+            }
+        };
+
+        window.addStudent = async () => {
+            if (!isStaff || !currentUser) return;
+            const name = document.getElementById('admin-name').value.trim();
+            const className = document.getElementById('admin-class').value;
+
+            if (!name) return showToast("ระบุชื่อนักเรียน", "error");
+
+            // Teacher Permission Check for Adding Student
+            if (userRole === 'teacher' && className !== assignedClass) {
+                return showToast(`คุณครูสามารถเพิ่มนักเรียนได้เฉพาะชั้น ${assignedClass}`, "error");
+            }
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'students'), {
+                    name, class: className, balance: 0, createdAt: Timestamp.now()
+                });
+                document.getElementById('admin-name').value = '';
+                showToast("เพิ่มนักเรียนสำเร็จ", "success");
+            } catch (e) { 
+                console.error("Add student error:", e);
+                showToast("เกิดข้อผิดพลาดในการเพิ่มข้อมูล", "error"); 
+            }
+        };
+
+        window.saveTeacher = async () => {
+            if (userRole !== 'admin' || !currentUser) return showToast("ต้องการสิทธิ์แอดมิน", "error");
+            const className = document.getElementById('admin-teacher-class').value;
+            const name = document.getElementById('admin-teacher-name').value.trim();
+            const email = document.getElementById('admin-teacher-email').value.trim();
+            const password = document.getElementById('admin-teacher-password').value;
+
+            if (!name || !email || !password) {
+                return showToast("กรุณากรอกข้อมูลครูให้ครบถ้วน", "error");
+            }
+
+            if (password.length < 6) {
+                return showToast("รหัสผ่านควรมีความยาวอย่างน้อย 6 หลัก", "error");
+            }
+
+            try {
+                const existing = teachers.find(t => t.class === className);
+                if (existing) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teachers', existing.id), {
+                        name,
+                        email,
+                        password
+                    });
+                    showToast(`อัปเดตครูประจำชั้น ${className} สำเร็จ`, "success");
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'teachers'), {
+                        class: className,
+                        name,
+                        email,
+                        password
+                    });
+                    showToast(`เพิ่มครูประจำชั้น ${className} สำเร็จ`, "success");
+                }
+                document.getElementById('admin-teacher-name').value = '';
+                document.getElementById('admin-teacher-email').value = '';
+                document.getElementById('admin-teacher-password').value = '';
+            } catch (e) {
+                console.error("Save teacher error:", e);
+                showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล", "error");
+            }
+        };
+
+        window.deleteTeacher = async (id) => {
+            if (userRole !== 'admin' || !currentUser) return showToast("ต้องการสิทธิ์แอดมิน", "error");
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teachers', id));
+                showToast("ลบข้อมูลครูประจำชั้นสำเร็จ", "success");
+            } catch(e) {
+                console.error("Delete teacher error:", e);
+                showToast("เกิดข้อผิดพลาดในการลบข้อมูล", "error");
+            }
+        };
+
+        // Admin Tools
+        window.importExcel = async (e) => {
+            if (userRole !== 'admin' || !currentUser) return;
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showToast("กำลังอ่านไฟล์ กรุณารอสักครู่...", "success");
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    let count = 0;
+                    for (const row of json) {
+                        const name = row['ชื่อ'] || row['ชื่อ-สกุล'] || row['name'] || row['Name'];
+                        let cls = row['ชั้น'] || row['ชั้นเรียน'] || row['class'] || row['Class'];
+                        if (name) {
+                            const formattedClass = cls ? cls.toString().trim() : 'ไม่ระบุ';
+                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'students'), {
+                                name: name.toString().trim(),
+                                class: formattedClass,
+                                balance: 0,
+                                createdAt: Timestamp.now()
+                            });
+                            count++;
+                        }
+                    }
+                    showToast(`นำเข้าข้อมูลนักเรียน ${count} รายการ สำเร็จ`, "success");
+                    e.target.value = ''; // Reset file input
+                } catch(err) {
+                    console.error("Excel Import Error:", err);
+                    showToast("รูปแบบไฟล์ไม่ถูกต้อง หรือเกิดข้อผิดพลาด", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.exportBackup = async () => {
+            if (userRole !== 'admin' || !currentUser) return;
+            try {
+                showToast("กำลังดึงข้อมูลเพื่อสำรอง...", "success");
+                
+                // ใช้ข้อมูลจาก Listener ที่อยู่ในหน่วยความจำเพื่อความรวดเร็ว
+                const backupData = {
+                    exportDate: new Date().toISOString(),
+                    students: students,
+                    transactions: transactions,
+                    teachers: teachers
+                };
+
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SchoolSavings_Backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                
+                URL.revokeObjectURL(url);
+                showToast("ดาวน์โหลดไฟล์สำรองข้อมูลสำเร็จ", "success");
+            } catch(e) {
+                console.error("Backup Error:", e);
+                showToast("เกิดข้อผิดพลาดในการสำรองข้อมูล", "error");
+            }
+        };
+
+        window.restoreBackup = async (e) => {
+            if (userRole !== 'admin' || !currentUser) return;
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if(!confirm("คำเตือน: การกู้คืนจะเขียนทับข้อมูลในระบบที่มี ID ตรงกับในไฟล์สำรองข้อมูล คุณต้องการดำเนินการต่อหรือไม่?")) {
+                e.target.value = '';
+                return;
+            }
+
+            showToast("กำลังกู้คืนข้อมูล กรุณารอสักครู่...", "success");
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    let count = 0;
+                    
+                    const parseData = (item) => {
+                        const { id, ...rest } = item;
+                        if (rest.createdAt && rest.createdAt.seconds) {
+                            rest.createdAt = new Timestamp(rest.createdAt.seconds, rest.createdAt.nanoseconds);
+                        }
+                        if (rest.timestamp && rest.timestamp.seconds) {
+                            rest.timestamp = new Timestamp(rest.timestamp.seconds, rest.timestamp.nanoseconds);
+                        }
+                        return { id, rest };
+                    };
+
+                    if (data.students) {
+                        for (const s of data.students) {
+                            const { id, rest } = parseData(s);
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id), rest);
+                            count++;
+                        }
+                    }
+                    if (data.transactions) {
+                        for (const t of data.transactions) {
+                            const { id, rest } = parseData(t);
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', id), rest);
+                            count++;
+                        }
+                    }
+                    if (data.teachers) {
+                        for (const t of data.teachers) {
+                            const { id, rest } = parseData(t);
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teachers', id), rest);
+                            count++;
+                        }
+                    }
+                    
+                    showToast(`กู้คืนข้อมูล ${count} รายการ สำเร็จ`, "success");
+                } catch(err) {
+                    console.error("Restore Backup Error:", err);
+                    showToast("ไฟล์ไม่ถูกต้อง หรือเกิดข้อผิดพลาดในการกู้คืน", "error");
+                }
+                e.target.value = ''; // Reset input
+            };
+            reader.readAsText(file);
+        };
+
+        window.generatePrintReport = () => {
+            if (userRole !== 'admin' && userRole !== 'teacher') return;
+            
+            const printArea = document.getElementById('print-area');
+            const todayStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            let deposit = 0, withdraw = 0;
+            transactions.forEach(t => {
+                if(t.type === 'ฝาก') deposit += t.amount;
+                if(t.type === 'ถอน') withdraw += t.amount;
+            });
+            const net = deposit - withdraw;
+
+            const classTotals = {};
+            students.forEach(s => classTotals[s.class] = (classTotals[s.class] || 0) + s.balance);
+            
+            const classHtml = Object.keys(classTotals).sort().map(cls => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-size: 16px;">ชั้น ${cls}</span>
+                    <span style="font-size: 16px; font-weight: bold;">฿${classTotals[cls].toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                </div>
+            `).join('');
+
+            printArea.innerHTML = `
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">รายงานสรุปออมทรัพย์โรงเรียน</h1>
+                    <p style="font-size: 16px; color: #475569;">ประจำวันที่: ${todayStr}</p>
+                </div>
+                
+                <div style="display: flex; gap: 16px; margin-bottom: 2rem;">
+                    <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px; text-align: center;">
+                        <p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">ยอดฝากวันนี้</p>
+                        <p style="font-size: 20px; font-weight: bold; color: #059669;">฿${deposit.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px; text-align: center;">
+                        <p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">ยอดถอนวันนี้</p>
+                        <p style="font-size: 20px; font-weight: bold; color: #e11d48;">฿${withdraw.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px; text-align: center;">
+                        <p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">เงินหมุนเวียนสุทธิ</p>
+                        <p style="font-size: 20px; font-weight: bold; color: #2563eb;">฿${net.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #1e293b;">ยอดเงินออมรวม แยกตามชั้นเรียน</h2>
+                    ${classHtml}
+                </div>
+                
+                <div style="text-align: center; margin-top: 4rem; font-size: 12px; color: #64748b;">
+                    <p>พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}</p>
+                    <p>ผู้พิมพ์: ${currentUser.email || 'Admin'}</p>
+                </div>
+            `;
+            
+            // Allow DOM to update before printing
+            setTimeout(() => { window.print(); }, 200);
+        };
+
+        // Navigation & UI Rendering
+        window.switchTab = (tab) => {
+            ['main', 'summary', 'admin'].forEach(t => {
+                const el = document.getElementById(`section-${t}`);
+                if (el) el.classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) btn.classList.remove('tab-active');
+            });
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+            if (tab === 'summary') renderCharts();
+        };
+
+        window.filterStudentsByClass = () => {
+            const selectedClass = document.getElementById('select-class').value;
+            const dropdown = document.getElementById('select-student');
+            dropdown.innerHTML = '<option value="">-- ค้นหาชื่อนักเรียน --</option>';
+            
+            const filtered = selectedClass === 'all' ? students : students.filter(s => s.class === selectedClass);
+            filtered.sort((a,b) => a.name.localeCompare(b.name, 'th')).forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                dropdown.appendChild(opt);
+            });
+            showStudentBalance();
+        };
+
+        window.showStudentBalance = () => {
+            const id = document.getElementById('select-student').value;
+            const infoBox = document.getElementById('student-info');
+            if (id) {
+                const s = students.find(x => x.id === id);
+                if (s) {
+                    document.getElementById('display-balance').textContent = s.balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    infoBox.classList.remove('hidden');
+                }
+            } else {
+                infoBox.classList.add('hidden');
+            }
+        };
+
+        const updateStudentDropdown = () => {
+            const currentSelected = document.getElementById('select-student').value;
+            filterStudentsByClass();
+            if (currentSelected) document.getElementById('select-student').value = currentSelected;
+            showStudentBalance();
+        };
+
+        const renderTransactionsTable = () => {
+            const tbody = document.getElementById('table-transactions');
+            if (transactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-300 italic">ไม่มีรายการธุรกรรมในวันนี้</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = transactions.map(t => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="py-4 pl-2 text-slate-400 text-xs font-bold tabular-nums">${t.timestamp?.toDate().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</td>
+                    <td class="py-4">
+                        <div class="font-bold text-slate-700">${t.studentName}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${t.class}</div>
+                    </td>
+                    <td class="py-4">
+                        <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${t.type === 'ฝาก' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
+                            ${t.type}
+                        </span>
+                    </td>
+                    <td class="py-4 text-right pr-2 font-black tabular-nums text-lg ${t.type === 'ฝาก' ? 'text-emerald-500' : 'text-rose-500'}">
+                        ${t.type === 'ฝาก' ? '+' : '-'}${t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        const renderTeachersTable = () => {
+            const tbody = document.getElementById('table-teachers');
+            if (!tbody) return;
+            
+            const sorted = [...teachers].sort((a,b) => a.class.localeCompare(b.class, 'th'));
+            
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">ยังไม่มีข้อมูลครูประจำชั้น</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = sorted.map(t => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3 font-bold text-slate-700">${t.class}</td>
+                    <td class="px-4 py-3 text-slate-600">${t.name}</td>
+                    <td class="px-4 py-3 text-slate-500 text-xs font-mono">${t.email || '-'}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="deleteTeacher('${t.id}')" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-3 py-1 bg-rose-50 rounded-lg transition active:scale-95">ลบ</button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        const updateTodaySummary = () => {
+            let deposit = 0;
+            let withdraw = 0;
+            transactions.forEach(t => {
+                if(t.type === 'ฝาก') deposit += t.amount;
+                if(t.type === 'ถอน') withdraw += t.amount;
+            });
+            
+            const net = deposit - withdraw;
+            
+            const depEl = document.getElementById('summary-today-deposit');
+            const witEl = document.getElementById('summary-today-withdraw');
+            const netEl = document.getElementById('summary-today-net');
+            
+            if(depEl) depEl.textContent = deposit.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            if(witEl) witEl.textContent = withdraw.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            if(netEl) netEl.textContent = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        };
+
+        const renderCharts = () => {
+            const classTotals = {};
+            students.forEach(s => classTotals[s.class] = (classTotals[s.class] || 0) + s.balance);
+            const labels = Object.keys(classTotals).sort();
+            const data = labels.map(l => classTotals[l]);
+
+            const ctxPie = document.getElementById('chart-pie-class').getContext('2d');
+            if (pieChart) pieChart.destroy();
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+                        hoverOffset: 20,
+                        borderWidth: 4,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 30, font: { family: 'Sarabun', weight: 'bold' } } } } }
+            });
+
+            const ctxBar = document.getElementById('chart-bar-class').getContext('2d');
+            if (barChart) barChart.destroy();
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'เงินออมรวม (บาท)',
+                        data: data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 12,
+                        barThickness: 30
+                    }]
+                },
+                options: { 
+                    scales: { 
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    }, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        };
+
+        const showToast = (msg, type) => {
+            const statusContainer = document.getElementById('status-container');
+            if (!statusContainer) return;
+            const toast = document.createElement('div');
+            toast.className = `p-4 mb-3 rounded-2xl shadow-2xl text-white font-bold transition-all duration-300 transform translate-y-0 flex items-center gap-3 animate-in slide-in-from-right-full ${type === 'success' ? 'bg-slate-800' : 'bg-rose-600'}`;
+            toast.innerHTML = `
+                <div class="w-6 h-6 rounded-full flex items-center justify-center bg-white/20">
+                    ${type === 'success' ? '✓' : '!'}
+                </div>
+                <span>${msg}</span>
+            `;
+            statusContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-12');
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>
