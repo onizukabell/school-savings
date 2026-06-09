@@ -3,64 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>โปรแกรมออมทรัพย์โรงเรียน (Secure & Role-Based Version)</title>
+    <title>โปรแกรมออมทรัพย์โรงเรียน (Pastel & Admin Settings)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- เพิ่มไลบรารี SheetJS สำหรับอ่านไฟล์ Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap');
-        body { font-family: 'Sarabun', sans-serif; }
-        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #F8FAFC; }
+        .tab-active { border-bottom: 3px solid #93C5FD; color: #3B82F6; font-weight: bold; background-color: #EFF6FF; }
         .staff-only { display: none; }
         body.is-staff .staff-only { display: block; }
         body.is-staff .staff-flex { display: flex; }
         .admin-only { display: none; }
         body.is-admin .admin-only { display: block; }
-        .glass-morphism { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .glass-morphism { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }
         
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-thumb { background: #BFDBFE; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #93C5FD; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+<body class="min-h-screen text-slate-700 selection:bg-indigo-100 selection:text-indigo-900">
 
     <!-- ครอบเนื้อหาหลักเพื่อซ่อนตอนสั่งพิมพ์ (Print) -->
     <div id="app-container" class="print:hidden max-w-4xl mx-auto p-4 md:p-6">
         <!-- Header -->
-        <header class="glass-morphism rounded-3xl shadow-sm p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-white">
+        <header class="glass-morphism rounded-3xl shadow-sm shadow-blue-100/50 p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4">
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 shrink-0 transform hover:scale-105 transition duration-300">
+                <div class="w-14 h-14 bg-gradient-to-br from-indigo-200 to-purple-300 rounded-2xl flex items-center justify-center text-indigo-700 shadow-md shadow-indigo-100 shrink-0 transform hover:scale-105 transition duration-300 border border-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <div class="text-center md:text-left">
-                    <h1 class="text-2xl font-black text-slate-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700">ระบบออมทรัพย์นักเรียน</h1>
-                    <p class="text-slate-500 text-sm font-medium mt-0.5">โรงเรียนบ้านแม่เมย ประจำปีการศึกษา 2569</p>
+                    <h1 class="text-2xl font-black text-indigo-900 tracking-tight drop-shadow-sm">ระบบออมทรัพย์ <span id="display-school-name" class="text-indigo-600">โรงเรียน</span></h1>
+                    <p id="display-academic-year" class="text-indigo-400 text-sm font-bold mt-0.5">ประจำปีการศึกษา 2569</p>
                 </div>
             </div>
             <div id="auth-section">
-                <button id="btn-login-trigger" onclick="toggleLoginModal(true)" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-700 transition-all active:scale-95 shadow-md flex items-center gap-2">
+                <button id="btn-login-trigger" onclick="toggleLoginModal(true)" class="bg-indigo-300 text-indigo-900 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-400 hover:text-white transition-all active:scale-95 shadow-sm border border-indigo-200 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                     เข้าสู่ระบบครู
                 </button>
-                <div id="admin-info" class="hidden items-center gap-4 bg-slate-100 py-2 px-4 rounded-2xl border border-slate-200">
+                <div id="admin-info" class="hidden items-center gap-4 bg-white/60 py-2 px-4 rounded-2xl border border-indigo-50 shadow-sm">
                     <div class="flex flex-col text-right">
                         <div class="flex items-center gap-2 justify-end">
                             <span class="relative flex h-2 w-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
                             </span>
                             <span id="user-role-badge" class="text-[11px] font-bold text-emerald-600 tracking-wide uppercase">Online</span>
                         </div>
-                        <span id="user-display-name" class="text-xs text-slate-500 font-bold mt-0.5"></span>
+                        <span id="user-display-name" class="text-xs text-indigo-900 font-bold mt-0.5"></span>
                     </div>
-                    <div class="h-8 w-px bg-slate-300"></div>
-                    <button onclick="logout()" class="text-rose-500 p-2 rounded-xl hover:bg-rose-50 transition tooltip" title="ออกจากระบบ">
+                    <div class="h-8 w-px bg-indigo-100"></div>
+                    <button onclick="logout()" class="text-rose-400 p-2 rounded-xl hover:bg-rose-100 hover:text-rose-600 transition tooltip" title="ออกจากระบบ">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     </button>
                 </div>
@@ -68,26 +68,26 @@
         </header>
 
         <!-- Navigation -->
-        <nav class="flex bg-white rounded-2xl shadow-sm mb-6 p-1.5 border border-slate-100">
+        <nav class="flex bg-white rounded-2xl shadow-sm mb-6 p-1.5 border border-blue-50/50">
             <button onclick="switchTab('main')" id="tab-main" class="flex-1 py-3 text-center rounded-xl transition tab-active">หน้าหลักฝาก-ถอน</button>
-            <button onclick="switchTab('summary')" id="tab-summary" class="flex-1 py-3 text-center rounded-xl transition hover:bg-slate-50">ภาพรวมสรุปผล</button>
-            <button onclick="switchTab('admin')" id="tab-admin" class="staff-only flex-1 py-3 text-center rounded-xl transition hover:bg-slate-50">การตั้งค่าระบบ</button>
+            <button onclick="switchTab('summary')" id="tab-summary" class="flex-1 py-3 text-center rounded-xl transition hover:bg-blue-50/50 text-slate-500 font-medium">ภาพรวมสรุปผล</button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="staff-only flex-1 py-3 text-center rounded-xl transition hover:bg-blue-50/50 text-slate-500 font-medium">การตั้งค่าระบบ</button>
         </nav>
 
         <main>
             <!-- Tab: Main -->
             <section id="section-main" class="space-y-6 animate-in fade-in duration-300">
                 <!-- Check Balance -->
-                <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                    <h2 class="text-lg font-bold mb-5 flex items-center gap-2 text-slate-700">
-                        <span class="w-2.5 h-6 bg-blue-500 rounded-full"></span>
+                <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100/50">
+                    <h2 class="text-lg font-bold mb-5 flex items-center gap-2 text-indigo-900">
+                        <span class="w-2.5 h-6 bg-indigo-300 rounded-full"></span>
                         ค้นหาข้อมูลนักเรียน
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                         <div class="space-y-2 relative">
-                            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">ระดับชั้นเรียน</label>
+                            <label class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest ml-1">ระดับชั้นเรียน</label>
                             <div class="relative">
-                                <select id="select-class" onchange="filterStudentsByClass()" class="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-slate-700 appearance-none disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100">
+                                <select id="select-class" onchange="filterStudentsByClass()" class="w-full pl-4 pr-10 py-3.5 bg-indigo-50/30 border border-indigo-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300/50 transition-all font-bold text-indigo-900 appearance-none disabled:opacity-60 disabled:cursor-not-allowed">
                                     <option value="all">ทุกชั้นเรียน</option>
                                     <option value="อนุบาล 2">อนุบาล 2</option>
                                     <option value="อนุบาล 3">อนุบาล 3</option>
@@ -97,90 +97,90 @@
                                     <option value="ป.4">ประถมศึกษาปีที่ 4</option>
                                     <option value="ป.5">ประถมศึกษาปีที่ 5</option>
                                     <option value="ป.6">ประถมศึกษาปีที่ 6</option>
+                                    <option value="จบการศึกษา">จบการศึกษาแล้ว</option>
                                 </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-indigo-400">
                                     <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                                 </div>
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">ชื่อ-นามสกุลนักเรียน</label>
+                            <label class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest ml-1">ชื่อ-นามสกุลนักเรียน</label>
                             <div class="relative">
-                                <select id="select-student" onchange="showStudentBalance()" class="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-slate-700 appearance-none">
+                                <select id="select-student" onchange="showStudentBalance()" class="w-full pl-4 pr-10 py-3.5 bg-indigo-50/30 border border-indigo-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300/50 transition-all font-bold text-indigo-900 appearance-none">
                                     <option value="">-- พิมพ์หรือเลือกชื่อนักเรียน --</option>
                                 </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-indigo-400">
                                     <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Balance Display (Passbook Style) -->
-                    <div id="student-info" class="hidden relative overflow-hidden bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#3B82F6] rounded-[2rem] mb-8 shadow-xl shadow-blue-200 animate-in zoom-in-95 duration-300 border border-blue-400/30">
-                        <!-- Decorative background elements -->
-                        <div class="absolute -right-16 -top-16 w-64 h-64 border-[30px] border-white/5 rounded-full pointer-events-none"></div>
-                        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <!-- Balance Display (Pastel Passbook Style) -->
+                    <div id="student-info" class="hidden relative overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-[2rem] mb-8 shadow-sm border border-white animate-in zoom-in-95 duration-300">
+                        <div class="absolute -right-16 -top-16 w-64 h-64 border-[30px] border-white/20 rounded-full pointer-events-none"></div>
+                        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-white/30 rounded-full blur-2xl pointer-events-none"></div>
                         
                         <div class="p-8 md:p-10 text-center relative z-10">
                             <!-- ปุ่มแก้ไขชื่อและเปิดปิดตา -->
                             <div class="absolute top-4 right-4 flex gap-2">
-                                <button onclick="toggleBalanceVisibility()" class="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-full transition-all active:scale-95 shadow-sm backdrop-blur-md border border-white/10" title="ซ่อน/แสดงยอดเงิน">
+                                <button onclick="toggleBalanceVisibility()" class="bg-white/40 hover:bg-white/60 text-indigo-700 p-2.5 rounded-full transition-all active:scale-95 shadow-sm backdrop-blur-md border border-white/50" title="ซ่อน/แสดงยอดเงิน">
                                     <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                 </button>
                                 <div id="edit-student-name-container" class="hidden">
-                                    <button onclick="openEditStudentNameModal()" class="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-full transition-all active:scale-95 shadow-sm backdrop-blur-md border border-white/10" title="แก้ไขชื่อนักเรียน">
+                                    <button onclick="openEditStudentNameModal()" class="bg-white/40 hover:bg-white/60 text-indigo-700 p-2.5 rounded-full transition-all active:scale-95 shadow-sm backdrop-blur-md border border-white/50" title="แก้ไขชื่อนักเรียน">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                     </button>
                                 </div>
                             </div>
                             
-                            <p class="text-blue-100 text-sm font-medium mb-2 tracking-wide">ยอดเงินคงเหลือในบัญชี</p>
-                            <h3 id="display-student-current-name" class="text-xl text-white font-bold mb-4 drop-shadow-sm">ชื่อนักเรียน</h3>
+                            <p class="text-indigo-600 text-sm font-bold mb-2 tracking-wide">ยอดเงินคงเหลือในบัญชี</p>
+                            <h3 id="display-student-current-name" class="text-xl text-indigo-900 font-black mb-4 drop-shadow-sm">ชื่อนักเรียน</h3>
                             
-                            <div class="flex items-center justify-center gap-2 mt-4 bg-white/10 inline-flex px-8 py-4 rounded-3xl backdrop-blur-sm border border-white/20 shadow-inner">
-                                <span class="text-3xl text-blue-200 font-bold">฿</span>
-                                <span id="display-balance" class="text-5xl md:text-6xl font-black text-white tracking-tight drop-shadow-md" data-value="0.00">0.00</span>
+                            <div class="flex items-center justify-center gap-2 mt-4 bg-white/50 inline-flex px-8 py-4 rounded-3xl backdrop-blur-sm border border-white shadow-sm">
+                                <span class="text-3xl text-indigo-400 font-bold">฿</span>
+                                <span id="display-balance" class="text-5xl md:text-6xl font-black text-indigo-800 tracking-tight" data-value="0.00">0.00</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Admin/Teacher: Deposit/Withdraw -->
-                    <div class="staff-only bg-slate-50/80 rounded-[2rem] p-6 border border-slate-200 shadow-inner">
+                    <div class="staff-only bg-indigo-50/30 rounded-[2rem] p-6 border border-indigo-100 shadow-inner">
                         <div class="flex items-center gap-2 mb-5">
-                            <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                            <div class="w-8 h-8 bg-indigo-200 text-indigo-700 rounded-full flex items-center justify-center border border-indigo-100 shadow-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
                             </div>
-                            <h3 class="font-bold text-slate-700 text-md tracking-wide">เครื่องมือฝาก-ถอนเงิน</h3>
+                            <h3 class="font-bold text-indigo-900 text-md tracking-wide">เครื่องมือฝาก-ถอนเงิน</h3>
                         </div>
                         
                         <div class="flex flex-col gap-4">
                             <!-- Input & Action Buttons -->
                             <div class="flex flex-col md:flex-row gap-3">
                                 <div class="relative flex-1">
-                                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xl">฿</span>
-                                    <input type="number" id="input-amount" placeholder="ระบุจำนวนเงิน..." class="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-bold text-xl text-slate-800 transition-shadow">
+                                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-300 font-black text-xl">฿</span>
+                                    <input type="number" id="input-amount" placeholder="ระบุจำนวนเงิน..." class="w-full pl-12 pr-4 py-4 bg-white border border-indigo-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 font-bold text-xl text-indigo-900 transition-shadow">
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="processTransaction('deposit')" class="flex-1 md:flex-none bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2">
+                                    <button onclick="processTransaction('deposit')" class="flex-1 md:flex-none bg-emerald-300 hover:bg-emerald-400 text-emerald-900 px-8 py-4 rounded-2xl font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 border border-emerald-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
                                         ฝาก
                                     </button>
-                                    <button onclick="processTransaction('withdraw')" class="flex-1 md:flex-none bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95 flex items-center justify-center gap-2">
+                                    <button onclick="processTransaction('withdraw')" class="flex-1 md:flex-none bg-rose-300 hover:bg-rose-400 text-rose-900 px-8 py-4 rounded-2xl font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 border border-rose-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                         ถอน
                                     </button>
                                 </div>
                             </div>
                             
-                            <!-- ใหม่: ปุ่มคีย์ลัดจำนวนเงิน -->
+                            <!-- ปุ่มคีย์ลัดจำนวนเงิน -->
                             <div class="flex flex-wrap gap-2 justify-start mt-1">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider self-center mr-2">เพิ่มด่วน:</span>
-                                <button onclick="addQuickAmount(10)" class="bg-white hover:bg-blue-50 border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-blue-100">+10</button>
-                                <button onclick="addQuickAmount(20)" class="bg-white hover:bg-blue-50 border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-blue-100">+20</button>
-                                <button onclick="addQuickAmount(50)" class="bg-white hover:bg-blue-50 border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-blue-100">+50</button>
-                                <button onclick="addQuickAmount(100)" class="bg-white hover:bg-blue-50 border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-blue-100">+100</button>
-                                <button onclick="addQuickAmount(500)" class="bg-white hover:bg-blue-50 border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-blue-100">+500</button>
+                                <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider self-center mr-2">เพิ่มด่วน:</span>
+                                <button onclick="addQuickAmount(10)" class="bg-white hover:bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-indigo-100">+10</button>
+                                <button onclick="addQuickAmount(20)" class="bg-white hover:bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-indigo-100">+20</button>
+                                <button onclick="addQuickAmount(50)" class="bg-white hover:bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-indigo-100">+50</button>
+                                <button onclick="addQuickAmount(100)" class="bg-white hover:bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-indigo-100">+100</button>
+                                <button onclick="addQuickAmount(500)" class="bg-white hover:bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors active:bg-indigo-100">+500</button>
                                 <button onclick="document.getElementById('input-amount').value=''" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-3 py-2 rounded-xl font-bold text-sm transition-colors ml-auto">ล้าง</button>
                             </div>
                         </div>
@@ -188,21 +188,21 @@
                 </div>
 
                 <!-- Transactions with Class Filter Dropdown -->
-                <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
+                <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100/50">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                            <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
-                            <h2 class="text-xl font-bold text-slate-800 tracking-tight">รายการล่าสุดวันนี้</h2>
-                            <div class="px-3 py-1 bg-emerald-100/50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse border border-emerald-200">
+                            <h2 class="text-xl font-bold text-indigo-900 tracking-tight">รายการล่าสุดวันนี้</h2>
+                            <div class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse border border-emerald-200">
                                 Live
                             </div>
                         </div>
                         
                         <div class="flex items-center gap-2">
-                            <label for="select-transaction-class-filter" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap hidden sm:block">กรองชั้นเรียน:</label>
-                            <select id="select-transaction-class-filter" onchange="renderTransactionsTable()" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-700 disabled:opacity-60 disabled:cursor-not-allowed appearance-none pr-8 relative cursor-pointer hover:bg-slate-100 transition">
+                            <label for="select-transaction-class-filter" class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider whitespace-nowrap hidden sm:block">กรองชั้นเรียน:</label>
+                            <select id="select-transaction-class-filter" onchange="renderTransactionsTable()" class="p-2.5 bg-indigo-50/50 border border-indigo-100 rounded-xl outline-none text-sm font-bold text-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed appearance-none pr-8 relative cursor-pointer hover:bg-indigo-100 transition">
                                 <option value="all">ทุกชั้นเรียน</option>
                                 <option value="อนุบาล 2">อนุบาล 2</option>
                                 <option value="อนุบาล 3">อนุบาล 3</option>
@@ -212,14 +212,15 @@
                                 <option value="ป.4">ป.4</option>
                                 <option value="ป.5">ป.5</option>
                                 <option value="ป.6">ป.6</option>
+                                <option value="จบการศึกษา">จบการศึกษาแล้ว</option>
                             </select>
                         </div>
                     </div>
                     
-                    <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <div class="overflow-x-auto rounded-xl border border-indigo-50">
                         <table class="w-full">
-                            <thead class="bg-slate-50">
-                                <tr class="text-slate-500 text-[11px] font-bold uppercase tracking-widest text-left">
+                            <thead class="bg-indigo-50/50">
+                                <tr class="text-indigo-400 text-[11px] font-bold uppercase tracking-widest text-left">
                                     <th class="py-3 px-4 rounded-tl-xl whitespace-nowrap">เวลา</th>
                                     <th class="py-3 px-4">นักเรียน</th>
                                     <th class="py-3 px-4">รายการ</th>
@@ -227,7 +228,7 @@
                                     <th class="py-3 px-4 text-center staff-only rounded-tr-xl">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-transactions" class="divide-y divide-slate-100 bg-white">
+                            <tbody id="table-transactions" class="divide-y divide-indigo-50 bg-white">
                                 <!-- Data will appear here -->
                             </tbody>
                         </table>
@@ -237,21 +238,21 @@
 
             <!-- Tab: Summary -->
             <section id="section-summary" class="hidden space-y-6 animate-in fade-in duration-300">
-                <!-- กล่องแสดงยอดทั้งหมดที่มีอยู่ในระบบ (ตามสิทธิ์) -->
-                <div class="bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-800 rounded-[2rem] p-8 md:p-10 text-white shadow-xl shadow-blue-200 border border-blue-400/30 relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
-                    <div class="absolute -left-10 bottom-0 w-32 h-32 bg-white opacity-5 rounded-full blur-xl"></div>
+                <!-- กล่องแสดงยอดทั้งหมดที่มีอยู่ในระบบ -->
+                <div class="bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 rounded-[2rem] p-8 md:p-10 text-indigo-900 shadow-sm border border-white relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-40 rounded-full blur-2xl"></div>
+                    <div class="absolute -left-10 bottom-0 w-32 h-32 bg-white opacity-20 rounded-full blur-xl"></div>
                     
                     <div class="flex flex-col md:flex-row justify-between items-center relative z-10 gap-6">
                         <div class="text-center md:text-left">
-                            <span id="summary-balance-badge" class="px-4 py-1.5 bg-white/20 rounded-full text-xs font-bold uppercase tracking-widest mb-3 inline-block backdrop-blur-sm border border-white/20 shadow-sm">
+                            <span id="summary-balance-badge" class="px-4 py-1.5 bg-white/50 rounded-full text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3 inline-block backdrop-blur-sm border border-white shadow-sm">
                                 ยอดเงินทั้งหมดในระบบ
                             </span>
                             <h2 id="summary-balance-title" class="text-2xl md:text-3xl font-black drop-shadow-sm">ยอดรวมเงินออมโรงเรียน</h2>
                         </div>
-                        <div class="text-center md:text-right bg-white/10 px-8 py-5 rounded-3xl backdrop-blur-sm border border-white/10 shadow-inner">
-                            <p class="text-blue-100 text-sm font-bold mb-1 tracking-wide uppercase text-center md:text-right">จำนวนเงินรวมทั้งหมด</p>
-                            <div class="text-4xl md:text-6xl font-black tracking-tight drop-shadow-md">
+                        <div class="text-center md:text-right bg-white/50 px-8 py-5 rounded-3xl backdrop-blur-sm border border-white shadow-sm">
+                            <p class="text-indigo-600 text-sm font-bold mb-1 tracking-wide uppercase text-center md:text-right">จำนวนเงินรวมทั้งหมด</p>
+                            <div class="text-4xl md:text-6xl font-black tracking-tight drop-shadow-sm">
                                 ฿ <span id="summary-total-all-balance">0.00</span>
                             </div>
                         </div>
@@ -262,7 +263,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
                         <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-600 flex items-center justify-center mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                         </div>
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดฝากรวมวันนี้</p>
@@ -270,7 +271,7 @@
                     </div>
                     <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
                         <div class="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 text-rose-600 flex items-center justify-center mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
                         </div>
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดถอนรวมวันนี้</p>
@@ -278,7 +279,7 @@
                     </div>
                     <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
                         <div class="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 text-indigo-600 flex items-center justify-center mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                         </div>
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">หมุนเวียนสุทธิวันนี้</p>
@@ -288,7 +289,7 @@
 
                 <!-- ส่วนแสดง 10 อันดับแรกของโรงเรียน -->
                 <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-900">
                         <span class="text-2xl">🏆</span>
                         ทำเนียบนักออมยอดเยี่ยม (10 อันดับของโรงเรียน)
                     </h2>
@@ -299,7 +300,7 @@
 
                 <!-- ส่วนแสดง 3 อันดับแรก แยกตามชั้นเรียน -->
                 <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-900">
                         <span class="text-2xl">🏅</span>
                         ทำเนียบนักออมยอดเยี่ยม (3 อันดับแรกของชั้นเรียน)
                     </h2>
@@ -311,13 +312,13 @@
                 <!-- แผนภูมิสถิติ -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                        <h2 class="text-lg font-bold mb-6 text-slate-700" id="summary-chart-pie-title">สัดส่วนเงินออม</h2>
+                        <h2 class="text-lg font-bold mb-6 text-indigo-900" id="summary-chart-pie-title">สัดส่วนเงินออม</h2>
                         <div class="aspect-square">
                             <canvas id="chart-pie-class"></canvas>
                         </div>
                     </div>
                     <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                        <h2 class="text-lg font-bold mb-6 text-slate-700" id="summary-chart-bar-title">ยอดรวมเงินออมแยกรายชั้น</h2>
+                        <h2 class="text-lg font-bold mb-6 text-indigo-900" id="summary-chart-bar-title">ยอดรวมเงินออมแยกรายชั้น</h2>
                         <div class="aspect-square flex items-end">
                             <canvas id="chart-bar-class"></canvas>
                         </div>
@@ -327,15 +328,40 @@
 
             <!-- Tab: Admin -->
             <section id="section-admin" class="hidden space-y-6 animate-in fade-in duration-300">
+                <!-- System Settings (Admin Only) -->
+                <div class="admin-only bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-900">
+                        <span class="w-2.5 h-6 bg-indigo-300 rounded-full"></span>
+                        ตั้งค่าระบบ (โรงเรียน & รหัสผ่าน)
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-2 bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider ml-1">ชื่อโรงเรียน</label>
+                            <input type="text" id="admin-setting-school" class="w-full p-4 bg-white border border-indigo-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 font-bold text-indigo-800">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider ml-1">ปีการศึกษา</label>
+                            <input type="text" id="admin-setting-year" class="w-full p-4 bg-white border border-indigo-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 font-bold text-indigo-800">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-indigo-400 uppercase tracking-wider ml-1">เปลี่ยนรหัสผ่าน Admin</label>
+                            <input type="text" id="admin-setting-password" placeholder="เว้นว่างถ้าไม่เปลี่ยน" class="w-full p-4 bg-white border border-indigo-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-300 font-bold text-indigo-800 placeholder:text-indigo-200">
+                        </div>
+                        <div class="md:col-span-3 flex justify-end mt-2">
+                            <button onclick="saveSystemSettings()" class="bg-indigo-400 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-indigo-500 shadow-sm border border-indigo-500 transition-all active:scale-95 w-full md:w-auto">บันทึกการตั้งค่า</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Registration Section -->
                 <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-                        <span class="w-2.5 h-6 bg-emerald-500 rounded-full"></span>
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-900">
+                        <span class="w-2.5 h-6 bg-emerald-300 rounded-full"></span>
                         ลงทะเบียนนักเรียนใหม่
                     </h2>
                     <div class="flex flex-col md:flex-row gap-4">
-                        <input type="text" id="admin-name" placeholder="ชื่อ-นามสกุลนักเรียน" class="flex-[2] p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700">
-                        <select id="admin-class" class="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold text-slate-700 disabled:opacity-60">
+                        <input type="text" id="admin-name" placeholder="ชื่อ-นามสกุลนักเรียน" class="flex-[2] p-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-300/50 font-bold text-emerald-900">
+                        <select id="admin-class" class="flex-1 p-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-300/50 font-bold text-emerald-900 disabled:opacity-60">
                             <option value="อนุบาล 2">อนุบาล 2</option>
                             <option value="อนุบาล 3">อนุบาล 3</option>
                             <option value="ป.1">ป.1</option>
@@ -345,20 +371,20 @@
                             <option value="ป.5">ป.5</option>
                             <option value="ป.6">ป.6</option>
                         </select>
-                        <button onclick="addStudent()" class="flex-1 bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all active:scale-95">บันทึกข้อมูล</button>
+                        <button onclick="addStudent()" class="flex-1 bg-emerald-400 text-white p-4 rounded-2xl font-bold hover:bg-emerald-500 shadow-sm border border-emerald-500 transition-all active:scale-95">เพิ่มนักเรียน</button>
                     </div>
                 </div>
 
                 <!-- Manage Teachers -->
                 <div class="admin-only bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-                        <span class="w-2.5 h-6 bg-purple-500 rounded-full"></span>
-                        จัดการบัญชีครูประจำชั้น (Admin Only)
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-900">
+                        <span class="w-2.5 h-6 bg-purple-300 rounded-full"></span>
+                        จัดการบัญชีครูประจำชั้น
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 bg-purple-50/50 p-6 rounded-3xl border border-purple-100/50">
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ชั้นเรียนที่รับผิดชอบ</label>
-                            <select id="admin-teacher-class" class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-700">
+                            <label class="text-xs font-bold text-purple-400 uppercase tracking-wider ml-1">ชั้นเรียนที่รับผิดชอบ</label>
+                            <select id="admin-teacher-class" class="w-full p-4 bg-white border border-purple-100 rounded-2xl outline-none focus:ring-2 focus:ring-purple-300 font-bold text-purple-900">
                                 <option value="อนุบาล 2">อนุบาล 2</option>
                                 <option value="อนุบาล 3">อนุบาล 3</option>
                                 <option value="ป.1">ป.1</option>
@@ -370,25 +396,25 @@
                             </select>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">ชื่อ-นามสกุล ครูประจำชั้น</label>
-                            <input type="text" id="admin-teacher-name" placeholder="ชื่อครูประจำชั้น" class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-700">
+                            <label class="text-xs font-bold text-purple-400 uppercase tracking-wider ml-1">ชื่อ-นามสกุล ครูประจำชั้น</label>
+                            <input type="text" id="admin-teacher-name" placeholder="ชื่อครูประจำชั้น" class="w-full p-4 bg-white border border-purple-100 rounded-2xl outline-none focus:ring-2 focus:ring-purple-300 font-bold text-purple-900">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Gmail (สำหรับล็อกอิน)</label>
-                            <input type="email" id="admin-teacher-email" placeholder="example@gmail.com" class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-700">
+                            <label class="text-xs font-bold text-purple-400 uppercase tracking-wider ml-1">Gmail (สำหรับล็อกอิน)</label>
+                            <input type="email" id="admin-teacher-email" placeholder="example@gmail.com" class="w-full p-4 bg-white border border-purple-100 rounded-2xl outline-none focus:ring-2 focus:ring-purple-300 font-bold text-purple-900">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">รหัสผ่านเข้าใช้งาน</label>
-                            <input type="password" id="admin-teacher-password" placeholder="อย่างน้อย 6 หลัก" class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-700">
+                            <label class="text-xs font-bold text-purple-400 uppercase tracking-wider ml-1">รหัสผ่านเข้าใช้งาน</label>
+                            <input type="password" id="admin-teacher-password" placeholder="อย่างน้อย 6 หลัก" class="w-full p-4 bg-white border border-purple-100 rounded-2xl outline-none focus:ring-2 focus:ring-purple-300 font-bold text-purple-900">
                         </div>
                         <div class="md:col-span-2 flex justify-end mt-2">
-                            <button onclick="saveTeacher()" class="bg-purple-600 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-purple-700 shadow-lg shadow-purple-200 transition-all active:scale-95 w-full md:w-auto">บันทึก / แก้ไขข้อมูลครู</button>
+                            <button onclick="saveTeacher()" class="bg-purple-400 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-purple-500 shadow-sm border border-purple-500 transition-all active:scale-95 w-full md:w-auto">บันทึก / แก้ไขข้อมูลครู</button>
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <div class="overflow-x-auto rounded-xl border border-purple-50">
                         <table class="w-full text-sm text-left">
-                            <thead class="text-[11px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 border-b border-slate-100">
+                            <thead class="text-[11px] text-purple-400 font-bold uppercase tracking-widest bg-purple-50/50 border-b border-purple-100">
                                 <tr>
                                     <th class="px-5 py-4 rounded-tl-xl w-24">ชั้นเรียน</th>
                                     <th class="px-5 py-4">ครูประจำชั้น</th>
@@ -396,49 +422,57 @@
                                     <th class="px-5 py-4 rounded-tr-xl text-center w-24">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-teachers" class="divide-y divide-slate-50 bg-white">
+                            <tbody id="table-teachers" class="divide-y divide-purple-50 bg-white">
                                 <!-- Data will appear here -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Admin Tools: Excel, Backup, Print -->
+                <!-- Admin Tools: Excel, Backup, Print & Promote -->
                 <div class="admin-only bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-                        <span class="w-2.5 h-6 bg-slate-800 rounded-full"></span>
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-900">
+                        <span class="w-2.5 h-6 bg-slate-300 rounded-full"></span>
                         เครื่องมือขั้นสูง (Admin Tools)
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer relative group">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="border border-dashed border-indigo-200 rounded-2xl p-6 text-center bg-indigo-50/30 hover:bg-indigo-50 transition cursor-pointer relative group">
                             <input type="file" id="file-import" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx, .xls, .csv" onchange="importExcel(event)">
-                            <div class="text-blue-500 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
+                            <div class="text-indigo-400 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             </div>
-                            <h3 class="font-bold text-slate-700">นำเข้าจาก Excel</h3>
-                            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">ใช้คอลัมน์: 'ชื่อ', 'ชั้น'</p>
+                            <h3 class="font-bold text-indigo-900">นำเข้าจาก Excel</h3>
+                            <p class="text-[10px] text-indigo-400 mt-1 uppercase tracking-wider font-bold">ใช้คอลัมน์: 'ชื่อ', 'ชั้น'</p>
                         </div>
-                        <button onclick="exportBackup()" class="border-2 border-slate-200 rounded-2xl p-6 text-center hover:bg-emerald-50 hover:border-emerald-300 transition group focus:outline-none">
-                            <div class="text-emerald-500 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
+                        <button onclick="exportBackup()" class="border border-emerald-200 rounded-2xl p-6 text-center bg-emerald-50/30 hover:bg-emerald-50 transition group focus:outline-none">
+                            <div class="text-emerald-400 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </div>
-                            <h3 class="font-bold text-slate-700">สำรองข้อมูลระบบ</h3>
-                            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">ดาวน์โหลดเป็นไฟล์ JSON</p>
+                            <h3 class="font-bold text-emerald-900">สำรองข้อมูลระบบ</h3>
+                            <p class="text-[10px] text-emerald-400 mt-1 uppercase tracking-wider font-bold">ดาวน์โหลด JSON</p>
                         </button>
-                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-purple-50 hover:border-purple-300 transition cursor-pointer relative group">
+                        <div class="border border-dashed border-purple-200 rounded-2xl p-6 text-center bg-purple-50/30 hover:bg-purple-50 transition cursor-pointer relative group">
                             <input type="file" id="file-restore" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".json" onchange="restoreBackup(event)">
-                            <div class="text-purple-500 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
+                            <div class="text-purple-400 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                             </div>
-                            <h3 class="font-bold text-slate-700">กู้คืนระบบ (Restore)</h3>
-                            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">อัปโหลดไฟล์ JSON ที่สำรองไว้</p>
+                            <h3 class="font-bold text-purple-900">กู้คืนระบบ</h3>
+                            <p class="text-[10px] text-purple-400 mt-1 uppercase tracking-wider font-bold">อัปโหลด JSON สำรอง</p>
                         </div>
-                        <button onclick="generatePrintReport()" class="border-2 border-slate-200 rounded-2xl p-6 text-center hover:bg-rose-50 hover:border-rose-300 transition group focus:outline-none">
-                            <div class="text-rose-500 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
+                        <button onclick="generatePrintReport()" class="border border-rose-200 rounded-2xl p-6 text-center bg-rose-50/30 hover:bg-rose-50 transition group focus:outline-none">
+                            <div class="text-rose-400 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             </div>
-                            <h3 class="font-bold text-slate-700">พิมพ์รายงาน / PDF</h3>
-                            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">พิมพ์ใบสรุปยอดปัจจุบัน</p>
+                            <h3 class="font-bold text-rose-900">พิมพ์รายงาน</h3>
+                            <p class="text-[10px] text-rose-400 mt-1 uppercase tracking-wider font-bold">พิมพ์ใบสรุปยอด</p>
+                        </button>
+                        <!-- ใหม่: ปุ่มเลื่อนชั้นเรียนอัตโนมัติ -->
+                        <button onclick="promoteStudents()" class="border border-amber-200 rounded-2xl p-6 text-center bg-amber-50/30 hover:bg-amber-100 transition group focus:outline-none">
+                            <div class="text-amber-400 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                            </div>
+                            <h3 class="font-bold text-amber-900">เลื่อนชั้น (สิ้นปี)</h3>
+                            <p class="text-[10px] text-amber-500 mt-1 uppercase tracking-wider font-bold">เลื่อนชั้น นร. อัตโนมัติ</p>
                         </button>
                     </div>
                 </div>
@@ -446,7 +480,7 @@
         </main>
 
         <footer class="mt-12 text-center text-slate-400 text-xs pb-10">
-            <p class="font-bold mb-1 tracking-widest uppercase">© 2026 School Savings Management System</p>
+            <p id="footer-school-name" class="font-bold mb-1 tracking-widest uppercase">© 2026 School Savings Management System</p>
             <p class="font-medium">Database: Firebase Firestore | Status: Secure Connection | Power By ครูเบลล์</p>
         </footer>
     </div>
@@ -456,45 +490,45 @@
 
     <!-- Login Modal -->
     <div id="login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200">
-            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-blue-100">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200 border border-white">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-indigo-200">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
             </div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2 tracking-tight">เข้าสู่ระบบจัดการ</h2>
-            <p class="text-slate-400 text-sm mb-6 font-medium">ล็อกอินด้วยบัญชี Gmail ของท่าน</p>
+            <h2 class="text-2xl font-black text-indigo-900 mb-2 tracking-tight">เข้าสู่ระบบจัดการ</h2>
+            <p class="text-indigo-400 text-sm mb-6 font-medium">ล็อกอินด้วยบัญชีที่ลงทะเบียนไว้</p>
             
             <div class="space-y-4 mb-6">
-                <input type="email" id="login-email" placeholder="ชื่อผู้ใช้ หรือ Gmail" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 font-bold text-center text-slate-700 transition">
-                <input type="password" id="login-pass" placeholder="รหัสผ่าน" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-500/20 font-black tracking-widest text-center text-slate-700 transition">
+                <input type="email" id="login-email" placeholder="ชื่อผู้ใช้ หรือ Gmail" class="w-full p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl outline-none ring-2 ring-transparent focus:ring-indigo-300/50 font-bold text-center text-indigo-800 transition">
+                <input type="password" id="login-pass" placeholder="รหัสผ่าน" class="w-full p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl outline-none ring-2 ring-transparent focus:ring-indigo-300/50 font-black tracking-widest text-center text-indigo-800 transition">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="toggleLoginModal(false)" class="py-4 text-slate-400 font-bold hover:text-slate-600 hover:bg-slate-50 rounded-2xl transition">ยกเลิก</button>
-                <button onclick="handleLogin()" class="bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">ยืนยัน</button>
+                <button onclick="toggleLoginModal(false)" class="py-4 text-indigo-300 font-bold hover:text-indigo-500 hover:bg-indigo-50 rounded-2xl transition">ยกเลิก</button>
+                <button onclick="handleLogin()" class="bg-indigo-400 text-white py-4 rounded-2xl font-bold hover:bg-indigo-500 shadow-md border border-indigo-500 transition-all active:scale-95">ยืนยัน</button>
             </div>
         </div>
     </div>
 
-    <!-- หน้าต่างแก้ไขชื่อนักเรียน (Edit Student Name Modal) -->
+    <!-- Edit Student Modal -->
     <div id="edit-student-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200">
-            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-indigo-100">
+            <div class="w-16 h-16 bg-blue-100 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-blue-200">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
             </div>
-            <h2 class="text-xl font-bold text-slate-800 mb-2">แก้ไขชื่อนักเรียน</h2>
-            <p class="text-slate-400 text-xs mb-6 font-medium">กรุณาระบุชื่อ-นามสกุลใหม่ของนักเรียน</p>
+            <h2 class="text-xl font-bold text-blue-900 mb-2">แก้ไขชื่อนักเรียน</h2>
+            <p class="text-blue-400 text-xs mb-6 font-medium">กรุณาระบุชื่อ-นามสกุลใหม่ของนักเรียน</p>
             
             <div class="space-y-4 mb-6">
-                <input type="text" id="edit-student-name-input" placeholder="ชื่อ-นามสกุลนักเรียน" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none ring-2 ring-transparent focus:ring-indigo-500/20 font-bold text-center text-slate-800 transition">
+                <input type="text" id="edit-student-name-input" placeholder="ชื่อ-นามสกุลนักเรียน" class="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl outline-none ring-2 ring-transparent focus:ring-blue-300/50 font-bold text-center text-blue-800 transition">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="toggleEditStudentModal(false)" class="py-3 text-slate-400 font-bold hover:text-slate-600 hover:bg-slate-50 rounded-2xl transition">ยกเลิก</button>
-                <button onclick="submitEditStudentName()" class="bg-indigo-600 text-white py-3 rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">บันทึกชื่อใหม่</button>
+                <button onclick="toggleEditStudentModal(false)" class="py-3 text-blue-300 font-bold hover:text-blue-500 hover:bg-blue-50 rounded-2xl transition">ยกเลิก</button>
+                <button onclick="submitEditStudentName()" class="bg-blue-400 text-white py-3 rounded-2xl font-bold hover:bg-blue-500 shadow-md border border-blue-500 transition-all active:scale-95">บันทึกชื่อใหม่</button>
             </div>
         </div>
     </div>
@@ -502,30 +536,30 @@
     <!-- Edit Transaction Modal -->
     <div id="edit-transaction-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200">
-            <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-amber-100">
+            <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-amber-200">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <h2 class="text-xl font-bold text-slate-800 mb-1">แก้ไขจำนวนเงิน</h2>
-            <p class="text-slate-400 text-xs mb-4 font-medium">ระบบจะคำนวณและปรับยอดอัตโนมัติ</p>
+            <h2 class="text-xl font-bold text-amber-900 mb-1">แก้ไขจำนวนเงิน</h2>
+            <p class="text-amber-500 text-xs mb-4 font-medium">ระบบจะคำนวณและปรับยอดอัตโนมัติ</p>
             
-            <div class="bg-slate-50 p-4 rounded-2xl mb-4 text-left text-xs space-y-1.5 border border-slate-100">
-                <p class="text-slate-500">นักเรียน: <span id="edit-tx-student-name" class="font-bold text-slate-700 text-sm"></span></p>
-                <p class="text-slate-500">รายการ: <span id="edit-tx-type" class="font-bold"></span></p>
-                <p class="text-slate-500">ยอดเงินเดิม: <span id="edit-tx-old-amount" class="font-bold text-slate-700 text-sm"></span></p>
+            <div class="bg-amber-50/50 p-4 rounded-2xl mb-4 text-left text-xs space-y-1.5 border border-amber-100">
+                <p class="text-amber-600">นักเรียน: <span id="edit-tx-student-name" class="font-bold text-amber-800 text-sm"></span></p>
+                <p class="text-amber-600">รายการ: <span id="edit-tx-type" class="font-bold"></span></p>
+                <p class="text-amber-600">ยอดเงินเดิม: <span id="edit-tx-old-amount" class="font-bold text-amber-800 text-sm"></span></p>
             </div>
 
             <div class="space-y-4 mb-6">
                 <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">฿</span>
-                    <input type="number" id="edit-transaction-amount-input" placeholder="จำนวนเงินที่ถูกต้อง" class="w-full pl-10 pr-4 p-4 bg-white border border-amber-200 rounded-2xl outline-none ring-2 ring-transparent focus:ring-amber-500/20 font-black text-center text-xl text-slate-800 transition">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-amber-300 font-bold">฿</span>
+                    <input type="number" id="edit-transaction-amount-input" placeholder="จำนวนเงินที่ถูกต้อง" class="w-full pl-10 pr-4 p-4 bg-white border border-amber-200 rounded-2xl outline-none ring-2 ring-transparent focus:ring-amber-300/50 font-black text-center text-xl text-amber-800 transition">
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="toggleEditTransactionModal(false)" class="py-3 text-slate-400 font-bold hover:text-slate-600 hover:bg-slate-50 rounded-2xl transition">ยกเลิก</button>
-                <button onclick="submitEditTransaction()" class="bg-amber-500 text-white py-3 rounded-2xl font-bold hover:bg-amber-600 shadow-lg shadow-amber-200 transition-all active:scale-95">ปรับยอดเงิน</button>
+                <button onclick="toggleEditTransactionModal(false)" class="py-3 text-amber-300 font-bold hover:text-amber-500 hover:bg-amber-50 rounded-2xl transition">ยกเลิก</button>
+                <button onclick="submitEditTransaction()" class="bg-amber-400 text-white py-3 rounded-2xl font-bold hover:bg-amber-500 shadow-md border border-amber-500 transition-all active:scale-95">ปรับยอดเงิน</button>
             </div>
         </div>
     </div>
@@ -538,6 +572,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, addDoc, Timestamp, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD_Fc_Xv0IolPdgk_BaefSMjJNYdLDy_aE",
             authDomain: "school-savings-app.firebaseapp.com",
@@ -549,8 +584,9 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'school-savings-secure-v2'; // ใช้ชื่อนี้ได้เลย
+        const appId = 'school-savings-secure-v2';
 
+        // Internal State
         let students = [];
         let transactions = [];
         let teachers = [];
@@ -560,13 +596,21 @@
         let currentUser = null;
         let activeEditingTx = null;
         let pieChart, barChart;
-        let isBalanceHidden = false; // State for eye toggle
+        let isBalanceHidden = false;
+
+        // Settings State
+        let appSettings = {
+            schoolName: "โรงเรียนบ้านแม่เมย",
+            academicYear: "2569",
+            adminPassword: "admin1234"
+        };
 
         let unsubscribeStudents = null;
         let unsubscribeTransactions = null;
         let unsubscribeTeachers = null;
+        let unsubscribeSettings = null;
 
-        const classLevels = ["อนุบาล 2", "อนุบาล 3", "ป.1", "ป.2", "ป.3", "ป.4", "ป.5", "ป.6"];
+        const classLevels = ["อนุบาล 2", "อนุบาล 3", "ป.1", "ป.2", "ป.3", "ป.4", "ป.5", "ป.6", "จบการศึกษา"];
 
         const init = async () => {
             try {
@@ -607,6 +651,7 @@
 
         const startDataListeners = () => {
             cleanupListeners(); 
+            listenToSettings(); 
             listenToStudents();
             listenToTransactions();
             listenToTeachers();
@@ -616,6 +661,34 @@
             if (unsubscribeStudents) { unsubscribeStudents(); unsubscribeStudents = null; }
             if (unsubscribeTransactions) { unsubscribeTransactions(); unsubscribeTransactions = null; }
             if (unsubscribeTeachers) { unsubscribeTeachers(); unsubscribeTeachers = null; }
+            if (unsubscribeSettings) { unsubscribeSettings(); unsubscribeSettings = null; }
+        };
+
+        const listenToSettings = () => {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general');
+            unsubscribeSettings = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appSettings = { ...appSettings, ...docSnap.data() };
+                } else {
+                    setDoc(docRef, appSettings).catch(console.error); 
+                }
+                
+                const nameEl = document.getElementById('display-school-name');
+                const yearEl = document.getElementById('display-academic-year');
+                const footerNameEl = document.getElementById('footer-school-name');
+                
+                if (nameEl) nameEl.textContent = appSettings.schoolName;
+                if (yearEl) yearEl.textContent = `ประจำปีการศึกษา ${appSettings.academicYear}`;
+                if (footerNameEl) footerNameEl.textContent = `© ${appSettings.academicYear} ${appSettings.schoolName} Savings System`;
+                
+                if (isStaff && userRole === 'admin') {
+                    const schoolInput = document.getElementById('admin-setting-school');
+                    const yearInput = document.getElementById('admin-setting-year');
+                    if (schoolInput && !schoolInput.value) schoolInput.value = appSettings.schoolName;
+                    if (yearInput && !yearInput.value) yearInput.value = appSettings.academicYear;
+                }
+            }, (err) => console.error("Settings Error:", err));
         };
 
         const listenToStudents = () => {
@@ -676,7 +749,7 @@
             if (!email || !pass) return showToast("กรุณากรอกข้อมูลให้ครบถ้วน", "error");
             if (!currentUser) return showToast("ระบบความปลอดภัยขัดข้อง กรุณารอสักครู่", "error");
 
-            if (email === 'admin@school.com' && pass === 'admin1234') {
+            if (email === 'admin@school.com' && pass === appSettings.adminPassword) {
                 userRole = 'admin';
                 assignedClass = null;
                 isStaff = true;
@@ -807,7 +880,36 @@
             updateSummaryTabInfo(); 
         };
 
-        // NEW: Toggle Eye (Hide/Show Balance)
+        window.saveSystemSettings = async () => {
+            if (userRole !== 'admin' || !currentUser) return showToast("ต้องการสิทธิ์แอดมิน", "error");
+            
+            const schoolName = document.getElementById('admin-setting-school').value.trim();
+            const year = document.getElementById('admin-setting-year').value.trim();
+            const newPassword = document.getElementById('admin-setting-password').value.trim();
+
+            if (!schoolName || !year) {
+                return showToast("กรุณากรอกชื่อโรงเรียนและปีการศึกษาให้ครบ", "error");
+            }
+
+            const updates = { schoolName, academicYear: year };
+
+            if (newPassword) {
+                if (newPassword.length < 6) return showToast("รหัสผ่านใหม่ต้องมี 6 หลักขึ้นไป", "error");
+                updates.adminPassword = newPassword;
+            }
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general');
+                await updateDoc(docRef, updates).catch(async () => {
+                    await setDoc(docRef, { ...appSettings, ...updates });
+                });
+                showToast("บันทึกการตั้งค่าระบบเรียบร้อย", "success");
+                document.getElementById('admin-setting-password').value = ''; 
+            } catch (error) {
+                showToast("เกิดข้อผิดพลาดในการบันทึก", "error");
+            }
+        };
+
         window.toggleBalanceVisibility = () => {
             isBalanceHidden = !isBalanceHidden;
             const balanceEl = document.getElementById('display-balance');
@@ -822,7 +924,6 @@
             }
         };
 
-        // NEW: Add Quick Amount
         window.addQuickAmount = (val) => {
             const inputEl = document.getElementById('input-amount');
             let current = parseFloat(inputEl.value);
@@ -1072,6 +1173,51 @@
             } catch(e) { showToast("เกิดข้อผิดพลาด", "error"); }
         };
 
+        // NEW: ฟังก์ชันเลื่อนชั้นเรียนนักเรียนตอนสิ้นปีการศึกษา
+        window.promoteStudents = async () => {
+            if (userRole !== 'admin' || !currentUser) return showToast("ต้องการสิทธิ์แอดมิน", "error");
+            
+            if(!confirm("⚠️ คำเตือนสำคัญ!\n\nระบบจะทำการเลื่อนชั้นเรียนให้นักเรียนทุกคนขึ้น 1 ระดับอัตโนมัติ (ป.6 จะเปลี่ยนเป็น 'จบการศึกษา')\n\n📌 ขอแนะนำอย่างยิ่งให้ 'สำรองข้อมูลระบบ' ไว้ก่อนดำเนินการ\n\nคุณแน่ใจหรือไม่ที่จะทำการเลื่อนชั้นเรียนนักเรียนทุกคน?")) {
+                return;
+            }
+
+            const confirmText = prompt("เพื่อยืนยันความตั้งใจ กรุณาพิมพ์คำว่า 'ยืนยัน' ด้านล่างนี้:");
+            if (confirmText !== 'ยืนยัน') {
+                showToast("ยกเลิกการเลื่อนชั้นเรียน", "error");
+                return;
+            }
+
+            showToast("กำลังเลื่อนชั้นนักเรียน กรุณารอสักครู่อย่าเพิ่งปิดหน้าจอ...", "success");
+            
+            // แผนผังการเลื่อนชั้น
+            const classProgression = {
+                "อนุบาล 2": "อนุบาล 3",
+                "อนุบาล 3": "ป.1",
+                "ป.1": "ป.2",
+                "ป.2": "ป.3",
+                "ป.3": "ป.4",
+                "ป.4": "ป.5",
+                "ป.5": "ป.6",
+                "ป.6": "จบการศึกษา"
+            };
+
+            try {
+                let count = 0;
+                for (const student of students) {
+                    const nextClass = classProgression[student.class];
+                    if (nextClass) { // เลื่อนเฉพาะคนที่อยู่ในแผนผังและยังไม่จบการศึกษา
+                        const studentRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', student.id);
+                        await updateDoc(studentRef, { class: nextClass });
+                        count++;
+                    }
+                }
+                showToast(`เลื่อนชั้นเรียนสำเร็จจำนวน ${count} คน`, "success");
+            } catch (err) {
+                console.error("Promote students error:", err);
+                showToast("เกิดข้อผิดพลาดในขณะเลื่อนชั้น", "error");
+            }
+        };
+
         // Admin Tools
         window.importExcel = async (e) => {
             if (userRole !== 'admin' || !currentUser) return;
@@ -1171,7 +1317,10 @@
             `).join('');
 
             printArea.innerHTML = `
-                <div style="text-align: center; margin-bottom: 2rem;"><h1 style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">รายงานสรุปออมทรัพย์โรงเรียน</h1><p style="font-size: 16px; color: #475569;">ประจำวันที่: ${todayStr}</p></div>
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">รายงานสรุปออมทรัพย์ ${appSettings.schoolName}</h1>
+                    <p style="font-size: 16px; color: #475569;">ประจำวันที่: ${todayStr}</p>
+                </div>
                 <div style="display: flex; gap: 16px; margin-bottom: 2rem;">
                     <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px; text-align: center;"><p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">ยอดฝากวันนี้</p><p style="font-size: 20px; font-weight: bold; color: #059669;">฿${deposit.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
                     <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px; text-align: center;"><p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">ยอดถอนวันนี้</p><p style="font-size: 20px; font-weight: bold; color: #e11d48;">฿${withdraw.toLocaleString(undefined, {minimumFractionDigits: 2})}</p></div>
@@ -1254,6 +1403,7 @@
             const classFilterVal = filterEl ? filterEl.value : 'all';
 
             let filteredTransactions = transactions;
+            
             if (isStaff && userRole === 'teacher') {
                 filteredTransactions = transactions.filter(t => t.class === assignedClass);
             } else if (classFilterVal !== 'all') {
@@ -1261,14 +1411,12 @@
             }
 
             if (filteredTransactions.length === 0) {
-                // แสดง Empty State แบบน่ารักๆ เมื่อไม่มีข้อมูล
                 tbody.innerHTML = `
                 <tr>
                     <td colspan="5" class="py-12 text-center border-b border-slate-50">
                         <div class="flex flex-col items-center justify-center opacity-50">
-                            <span class="text-4xl mb-3">👻</span>
-                            <p class="text-slate-400 font-bold text-sm">ยังไม่มีรายการทำธุรกรรมในวันนี้</p>
-                            <p class="text-slate-400 text-xs">เริ่มต้นฝากเงินให้เด็กๆ เพื่อแสดงข้อมูลที่นี่</p>
+                            <span class="text-4xl mb-3 text-indigo-200">🌿</span>
+                            <p class="text-indigo-400 font-bold text-sm">ยังไม่มีรายการทำธุรกรรมในวันนี้</p>
                         </div>
                     </td>
                 </tr>`;
@@ -1276,25 +1424,25 @@
             }
 
             tbody.innerHTML = filteredTransactions.map(t => {
-                let actionButtonsHtml = `<span class="text-slate-300 text-xs italic">-</span>`;
+                let actionButtonsHtml = `<span class="text-indigo-300 text-xs italic">-</span>`;
                 const matchedStudent = students.find(s => s.id === t.studentId);
                 const belongsToClass = matchedStudent && matchedStudent.class === assignedClass;
                 
                 if (isStaff && (userRole === 'admin' || (userRole === 'teacher' && belongsToClass))) {
                     actionButtonsHtml = `
                         <div class="flex items-center justify-center gap-2">
-                            <button onclick="toggleEditTransactionModal(true, '${t.id}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg font-bold text-xs transition border border-transparent hover:border-blue-200">แก้ไข</button>
-                            <button onclick="voidTransaction('${t.id}')" class="text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg font-bold text-xs transition border border-transparent hover:border-rose-200">ลบ</button>
+                            <button onclick="toggleEditTransactionModal(true, '${t.id}')" class="text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-lg font-bold text-xs transition border border-transparent hover:border-indigo-200">แก้ไข</button>
+                            <button onclick="voidTransaction('${t.id}')" class="text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-lg font-bold text-xs transition border border-transparent hover:border-rose-200">ลบ</button>
                         </div>
                     `;
                 }
 
                 return `
-                    <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-none">
-                        <td class="py-4 pl-4 text-slate-400 text-xs font-bold tabular-nums">${t.timestamp?.toDate().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</td>
+                    <tr class="hover:bg-indigo-50/50 transition-colors border-b border-indigo-50 last:border-none">
+                        <td class="py-4 pl-4 text-indigo-400 text-xs font-bold tabular-nums">${t.timestamp?.toDate().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</td>
                         <td class="py-4">
-                            <div class="font-bold text-slate-700">${t.studentName}</div>
-                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${t.class}</div>
+                            <div class="font-bold text-indigo-700">${t.studentName}</div>
+                            <div class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">${t.class}</div>
                         </td>
                         <td class="py-4">
                             <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm ${t.type === 'ฝาก' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}">${t.type}</span>
@@ -1312,12 +1460,12 @@
             const tbody = document.getElementById('table-teachers');
             if (!tbody) return;
             const sorted = [...teachers].sort((a,b) => a.class.localeCompare(b.class, 'th'));
-            if (sorted.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">ยังไม่มีข้อมูล</td></tr>`; return; }
+            if (sorted.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-purple-400 italic">ยังไม่มีข้อมูล</td></tr>`; return; }
             tbody.innerHTML = sorted.map(t => `
-                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
-                    <td class="px-5 py-4 font-bold text-slate-700">${t.class}</td>
-                    <td class="px-5 py-4 text-slate-600 font-medium">${t.name}</td>
-                    <td class="px-5 py-4 text-slate-500 text-xs font-mono bg-slate-50/50 rounded-lg inline-block mt-2 ml-4">${t.email || '-'}</td>
+                <tr class="hover:bg-purple-50/50 transition-colors border-b border-purple-50">
+                    <td class="px-5 py-4 font-bold text-purple-700">${t.class}</td>
+                    <td class="px-5 py-4 text-purple-600 font-medium">${t.name}</td>
+                    <td class="px-5 py-4 text-purple-500 text-xs font-mono bg-purple-50/50 rounded-lg inline-block mt-2 ml-4 border border-purple-100/50">${t.email || '-'}</td>
                     <td class="px-5 py-4 text-center"><button onclick="deleteTeacher('${t.id}')" class="text-rose-500 font-bold px-3 py-1.5 hover:bg-rose-50 rounded-lg text-xs transition border border-transparent hover:border-rose-200 shadow-sm">ลบข้อมูล</button></td>
                 </tr>
             `).join('');
@@ -1353,7 +1501,7 @@
             } else {
                 students.forEach(s => totalBalance += s.balance || 0);
                 badgeEl.textContent = `ยอดเงินทั้งหมดที่มีอยู่ในระบบ`;
-                titleEl.textContent = `ยอดรวมเงินออมโรงเรียนบ้านแม่เมย`;
+                titleEl.textContent = `ยอดรวมเงินออม${appSettings.schoolName}`;
             }
             totalEl.textContent = totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 });
         };
@@ -1366,22 +1514,22 @@
                 if (top10.length > 0) {
                     schoolContainer.innerHTML = top10.map((student, index) => {
                         let medal = index === 0 ? "🏆" : index === 1 ? "🥈" : index === 2 ? "🥉" : `<span class="text-sm">${index + 1}.</span>`;
-                        let bgClass = index < 3 ? "bg-gradient-to-r from-yellow-50 to-amber-50 border-amber-200" : "bg-slate-50 border-slate-100 hover:border-blue-200";
+                        let bgClass = index < 3 ? "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" : "bg-indigo-50/50 border-indigo-100 hover:border-indigo-200";
                         return `
                             <div class="flex items-center justify-between p-4 rounded-2xl border ${bgClass} shadow-sm transition hover:shadow-md">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-xl font-black ${index < 3 ? 'text-amber-500' : 'text-slate-400'} border border-slate-100">${medal}</div>
+                                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-xl font-black ${index < 3 ? 'text-amber-500' : 'text-indigo-400'} border border-white">${medal}</div>
                                     <div>
-                                        <div class="font-bold text-slate-800">${student.name}</div>
-                                        <div class="text-[10px] text-slate-400 font-bold tracking-widest uppercase bg-white px-2 py-0.5 rounded-md inline-block border border-slate-100 mt-1">${student.class}</div>
+                                        <div class="font-bold text-indigo-900">${student.name}</div>
+                                        <div class="text-[10px] text-indigo-500 font-bold tracking-widest uppercase bg-white px-2 py-0.5 rounded-md inline-block border border-indigo-50 mt-1">${student.class}</div>
                                     </div>
                                 </div>
-                                <span class="font-black text-blue-600 text-lg tabular-nums">฿${student.balance.toLocaleString()}</span>
+                                <span class="font-black text-indigo-600 text-lg tabular-nums">฿${student.balance.toLocaleString()}</span>
                             </div>
                         `;
                     }).join('');
                 } else {
-                    schoolContainer.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-medium bg-slate-50 rounded-3xl border border-dashed border-slate-200">ยังไม่มีข้อมูลนักเรียนในระบบ</div>`;
+                    schoolContainer.innerHTML = `<div class="col-span-2 py-10 text-center text-indigo-300 font-medium bg-indigo-50/50 rounded-3xl border border-dashed border-indigo-100">ยังไม่มีข้อมูลนักเรียนในระบบ</div>`;
                 }
             }
 
@@ -1397,27 +1545,27 @@
 
                     if (top3.length > 0) {
                         const classCard = document.createElement('div');
-                        classCard.className = "bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-lg transition duration-300 relative overflow-hidden";
+                        classCard.className = "bg-white rounded-3xl p-6 border border-indigo-50 shadow-sm hover:shadow-lg transition duration-300 relative overflow-hidden";
                         let listHtml = top3.map((student, index) => {
                             let medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
                             return `
-                                <div class="flex items-center justify-between py-3 border-b border-dashed border-slate-100 last:border-none group">
+                                <div class="flex items-center justify-between py-3 border-b border-dashed border-indigo-100 last:border-none group">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center text-sm shadow-sm group-hover:bg-blue-50 transition">${medal}</div>
-                                        <span class="font-bold text-slate-700 text-sm">${student.name}</span>
+                                        <div class="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center text-sm shadow-sm group-hover:bg-indigo-100 transition">${medal}</div>
+                                        <span class="font-bold text-indigo-800 text-sm">${student.name}</span>
                                     </div>
-                                    <span class="text-sm font-black text-blue-600 tabular-nums bg-blue-50 px-2 py-1 rounded-lg">฿${student.balance.toLocaleString()}</span>
+                                    <span class="text-sm font-black text-indigo-600 tabular-nums bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-100/50">฿${student.balance.toLocaleString()}</span>
                                 </div>
                             `;
                         }).join('');
 
                         classCard.innerHTML = `
-                            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full -z-10"></div>
-                            <div class="flex justify-between items-center mb-4 pb-3 border-b-2 border-slate-100">
-                                <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50 to-transparent rounded-bl-full -z-10"></div>
+                            <div class="flex justify-between items-center mb-4 pb-3 border-b-2 border-indigo-50">
+                                <h3 class="font-black text-indigo-900 text-lg flex items-center gap-2">
                                     <span class="text-xl">🏫</span> ชั้น${cls}
                                 </h3>
-                                <span class="text-[10px] px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-black rounded-lg uppercase tracking-wider shadow-sm">Top 3</span>
+                                <span class="text-[10px] px-2 py-1 bg-gradient-to-r from-blue-400 to-indigo-400 text-white font-black rounded-lg uppercase tracking-wider shadow-sm">Top 3</span>
                             </div>
                             <div class="space-y-1">${listHtml}</div>
                         `;
@@ -1426,7 +1574,7 @@
                 });
 
                 if (classContainer.children.length === 0) {
-                    classContainer.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-medium bg-slate-50 rounded-3xl border border-dashed border-slate-200">ยังไม่มีข้อมูลนักเรียนในชั้นเรียนนี้</div>`;
+                    classContainer.innerHTML = `<div class="col-span-2 py-10 text-center text-indigo-300 font-medium bg-indigo-50/50 rounded-3xl border border-dashed border-indigo-100">ยังไม่มีข้อมูลนักเรียนในชั้นเรียนนี้</div>`;
                 }
             }
         };
@@ -1438,6 +1586,8 @@
             if (barChart) barChart.destroy();
 
             let labels = [], data = [];
+            // ชุดสีพาสเทลสำหรับกราฟ
+            const pastelColors = ['#A78BFA', '#F472B6', '#60A5FA', '#34D399', '#FBBF24', '#FB7185', '#818CF8', '#A7F3D0'];
 
             if (isStaff && userRole === 'teacher') {
                 const classStudents = students.filter(s => s.class === assignedClass).sort((a,b) => b.balance - a.balance);
@@ -1448,13 +1598,13 @@
 
                 pieChart = new Chart(ctxPie, {
                     type: 'doughnut',
-                    data: { labels: labels.slice(0, 8), datasets: [{ data: data.slice(0, 8), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'] }] },
+                    data: { labels: labels.slice(0, 8), datasets: [{ data: data.slice(0, 8), backgroundColor: pastelColors, hoverOffset: 10, borderWidth: 2, borderColor: '#ffffff' }] },
                     options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Sarabun', weight: 'bold' } } } } }
                 });
 
                 barChart = new Chart(ctxBar, {
                     type: 'bar',
-                    data: { labels: labels.slice(0, 10), datasets: [{ label: 'เงินออม (บาท)', data: data.slice(0, 10), backgroundColor: '#3b82f6', borderRadius: 8 }] },
+                    data: { labels: labels.slice(0, 10), datasets: [{ label: 'เงินออม (บาท)', data: data.slice(0, 10), backgroundColor: '#93C5FD', borderRadius: 8 }] },
                     options: { scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
                 });
             } else {
@@ -1465,13 +1615,13 @@
 
                 pieChart = new Chart(ctxPie, {
                     type: 'doughnut',
-                    data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'] }] },
+                    data: { labels: labels, datasets: [{ data: data, backgroundColor: pastelColors, hoverOffset: 10, borderWidth: 2, borderColor: '#ffffff' }] },
                     options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Sarabun', weight: 'bold' } } } } }
                 });
 
                 barChart = new Chart(ctxBar, {
                     type: 'bar',
-                    data: { labels: labels, datasets: [{ label: 'รวม (บาท)', data: data, backgroundColor: '#3b82f6', borderRadius: 8 }] },
+                    data: { labels: labels, datasets: [{ label: 'รวม (บาท)', data: data, backgroundColor: '#93C5FD', borderRadius: 8 }] },
                     options: { scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
                 });
             }
@@ -1481,8 +1631,8 @@
             const statusContainer = document.getElementById('status-container');
             if (!statusContainer) return;
             const toast = document.createElement('div');
-            toast.className = `p-4 mb-3 rounded-2xl shadow-2xl text-white font-bold transition-all duration-300 transform translate-y-0 flex items-center gap-3 animate-in slide-in-from-right-full ${type === 'success' ? 'bg-slate-800' : 'bg-rose-600'}`;
-            toast.innerHTML = `<div class="w-6 h-6 rounded-full flex items-center justify-center bg-white/20">${type === 'success' ? '✓' : '!'}</div><span>${msg}</span>`;
+            toast.className = `p-4 mb-3 rounded-2xl shadow-2xl text-indigo-900 font-bold transition-all duration-300 transform translate-y-0 flex items-center gap-3 animate-in slide-in-from-right-full border ${type === 'success' ? 'bg-emerald-100 border-emerald-200' : 'bg-rose-100 border-rose-200'}`;
+            toast.innerHTML = `<div class="w-6 h-6 rounded-full flex items-center justify-center text-white shadow-sm ${type === 'success' ? 'bg-emerald-400' : 'bg-rose-400'}">${type === 'success' ? '✓' : '!'}</div><span>${msg}</span>`;
             statusContainer.appendChild(toast);
             setTimeout(() => { toast.classList.add('opacity-0', 'translate-x-12'); setTimeout(() => toast.remove(), 400); }, 3500);
         };
@@ -1491,4 +1641,3 @@
     </script>
 </body>
 </html>
-```eof
