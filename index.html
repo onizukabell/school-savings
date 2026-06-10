@@ -260,30 +260,64 @@
                 </div>
 
                 <!-- Today's Summary Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-600 flex items-center justify-center mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">สรุปยอดออมประจำวันนี้</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-600 flex items-center justify-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดฝากรวมวันนี้</p>
+                            <div class="text-2xl font-black text-emerald-600">฿ <span id="summary-today-deposit">0.00</span></div>
                         </div>
-                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดฝากรวมวันนี้</p>
-                        <div class="text-2xl font-black text-emerald-600">฿ <span id="summary-today-deposit">0.00</span></div>
+                        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 text-rose-600 flex items-center justify-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                            </div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดถอนรวมวันนี้</p>
+                            <div class="text-2xl font-black text-rose-600">฿ <span id="summary-today-withdraw">0.00</span></div>
+                        </div>
+                        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 text-indigo-600 flex items-center justify-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                            </div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">หมุนเวียนสุทธิวันนี้</p>
+                            <div class="text-2xl font-black text-indigo-600">฿ <span id="summary-today-net">0.00</span></div>
+                        </div>
                     </div>
-                    <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-rose-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                        <div class="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 text-rose-600 flex items-center justify-center mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                </div>
+
+                <!-- ใหม่: ส่วนแสดงสรุปผลยอดออมสัปดาห์ปัจจุบัน (จันทร์ - อาทิตย์) -->
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">สรุปยอดออมสัปดาห์ปัจจุบัน (จันทร์ - อาทิตย์)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-teal-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                            <div class="w-10 h-10 rounded-xl bg-teal-100 border border-teal-200 text-teal-600 flex items-center justify-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                            </div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดฝากสัปดาห์นี้</p>
+                            <div class="text-2xl font-black text-teal-600">฿ <span id="summary-week-deposit">0.00</span></div>
                         </div>
-                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดถอนรวมวันนี้</p>
-                        <div class="text-2xl font-black text-rose-600">฿ <span id="summary-today-withdraw">0.00</span></div>
-                    </div>
-                    <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
-                        <div class="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 text-indigo-600 flex items-center justify-center mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-rose-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 text-rose-500 flex items-center justify-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">ยอดถอนสัปดาห์นี้</p>
+                            <div class="text-2xl font-black text-rose-500">฿ <span id="summary-week-withdraw">0.00</span></div>
                         </div>
-                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">หมุนเวียนสุทธิวันนี้</p>
-                        <div class="text-2xl font-black text-indigo-600">฿ <span id="summary-today-net">0.00</span></div>
+                        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-center items-center sm:items-start relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                            <div class="w-10 h-10 rounded-xl bg-purple-100 border border-purple-200 text-purple-600 flex items-center justify-center mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                            </div>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">หมุนเวียนสุทธิสัปดาห์นี้</p>
+                            <div class="text-2xl font-black text-purple-600">฿ <span id="summary-week-net">0.00</span></div>
+                        </div>
                     </div>
                 </div>
 
@@ -309,7 +343,18 @@
                     </div>
                 </div>
 
-                <!-- แผนภูมิสถิติ -->
+                <!-- ใหม่: กราฟสรุปยอดเงินฝาก-ถอนรายเดือน (สถิติเปรียบเทียบ) -->
+                <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
+                    <h2 class="text-lg font-bold mb-4 text-indigo-900 flex items-center gap-2">
+                        <span class="text-xl">📊</span>
+                        สถิติกระแสเงินออม (ฝาก - ถอน) ประจำแต่ละเดือน
+                    </h2>
+                    <div class="relative h-80">
+                        <canvas id="chart-monthly-transactions"></canvas>
+                    </div>
+                </div>
+
+                <!-- แผนภูมิสถิติรายชั้นเรียนเดิม -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white rounded-[2rem] shadow-sm p-6 md:p-8 border border-slate-100">
                         <h2 class="text-lg font-bold mb-6 text-indigo-900" id="summary-chart-pie-title">สัดส่วนเงินออม</h2>
@@ -466,7 +511,7 @@
                             <h3 class="font-bold text-rose-900">พิมพ์รายงาน</h3>
                             <p class="text-[10px] text-rose-400 mt-1 uppercase tracking-wider font-bold">พิมพ์ใบสรุปยอด</p>
                         </button>
-                        <!-- ใหม่: ปุ่มเลื่อนชั้นเรียนอัตโนมัติ -->
+                        <!-- เลื่อนชั้นเรียนอัตโนมัติ -->
                         <button onclick="promoteStudents()" class="border border-amber-200 rounded-2xl p-6 text-center bg-amber-50/30 hover:bg-amber-100 transition group focus:outline-none">
                             <div class="text-amber-400 mb-3 transform group-hover:-translate-y-1 group-hover:scale-110 transition duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
@@ -511,7 +556,7 @@
         </div>
     </div>
 
-    <!-- Edit Student Modal -->
+    <!-- หน้าต่างแก้ไขชื่อนักเรียน (Edit Student Name Modal) -->
     <div id="edit-student-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-200">
             <div class="w-16 h-16 bg-blue-100 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-blue-200">
@@ -589,13 +634,14 @@
         // Internal State
         let students = [];
         let transactions = [];
+        let allTransactions = []; // ใหม่: เก็บธุรกรรมทั้งหมดเพื่อคำนวณรายสัปดาห์และรายเดือน (ตามเงื่อนไข RULE 2)
         let teachers = [];
         let isStaff = false;
         let userRole = 'public';
         let assignedClass = null;
         let currentUser = null;
         let activeEditingTx = null;
-        let pieChart, barChart;
+        let pieChart, barChart, monthlyTransactionChartInstance; // อัปเดตตัวแปร chart รายเดือน
         let isBalanceHidden = false;
 
         // Settings State
@@ -710,13 +756,18 @@
                 const today = new Date();
                 today.setHours(0,0,0,0);
 
-                transactions = snapshot.docs
+                // ใหม่: เก็บข้อมูลธุรกรรมทั้งหมดไว้ในตัวแปรเพื่อนำไปวิเคราะห์ผล (ตาม RULE 2)
+                allTransactions = snapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .filter(t => t.timestamp?.toDate() >= today) 
                     .sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
+
+                // กรองข้อมูลเฉพาะของวันนี้ในหน่วยความจำ
+                transactions = allTransactions.filter(t => t.timestamp?.toDate() >= today);
                 
                 renderTransactionsTable();
                 updateTodaySummary();
+                updateWeeklySummary(); // อัปเดตกล่องยอดสรุปสัปดาห์นี้
+                if (document.getElementById('section-summary').style.display !== 'none') renderCharts();
             }, (err) => console.error("Firestore Error:", err));
         };
 
@@ -920,7 +971,7 @@
                 iconSvg.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />`;
             } else {
                 balanceEl.textContent = balanceEl.getAttribute('data-value');
-                iconSvg.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+                iconSvg.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
             }
         };
 
@@ -1173,7 +1224,6 @@
             } catch(e) { showToast("เกิดข้อผิดพลาด", "error"); }
         };
 
-        // NEW: ฟังก์ชันเลื่อนชั้นเรียนนักเรียนตอนสิ้นปีการศึกษา
         window.promoteStudents = async () => {
             if (userRole !== 'admin' || !currentUser) return showToast("ต้องการสิทธิ์แอดมิน", "error");
             
@@ -1189,7 +1239,6 @@
 
             showToast("กำลังเลื่อนชั้นนักเรียน กรุณารอสักครู่อย่าเพิ่งปิดหน้าจอ...", "success");
             
-            // แผนผังการเลื่อนชั้น
             const classProgression = {
                 "อนุบาล 2": "อนุบาล 3",
                 "อนุบาล 3": "ป.1",
@@ -1205,7 +1254,7 @@
                 let count = 0;
                 for (const student of students) {
                     const nextClass = classProgression[student.class];
-                    if (nextClass) { // เลื่อนเฉพาะคนที่อยู่ในแผนผังและยังไม่จบการศึกษา
+                    if (nextClass) { 
                         const studentRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', student.id);
                         await updateDoc(studentRef, { class: nextClass });
                         count++;
@@ -1257,7 +1306,7 @@
         window.exportBackup = async () => {
             if (userRole !== 'admin' || !currentUser) return;
             try {
-                const backupData = { exportDate: new Date().toISOString(), students, transactions, teachers };
+                const backupData = { exportDate: new Date().toISOString(), students, transactions: allTransactions, teachers };
                 const blob = new Blob([JSON.stringify(backupData, null, 2)], {type: "application/json"});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -1486,6 +1535,41 @@
             if(netEl) netEl.textContent = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
         };
 
+        // ใหม่: ฟังก์ชันคำนวณสรุปยอดออมในสัปดาห์ปัจจุบัน (จันทร์ - อาทิตย์) ของนักเรียนในสิทธิ์เข้าถึง (In-Memory Filter)
+        const updateWeeklySummary = () => {
+            let deposit = 0, withdraw = 0;
+
+            // ค้นหาวันจันทร์ของสัปดาห์นี้
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1); // ปรับค่ากรณีเป็นวันอาทิตย์ (day=0) ให้ชี้กลับไปวันจันทร์ก่อนหน้า
+            const startOfWeek = new Date(now.setDate(diff));
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            // กรอง transactions ในรอบสัปดาห์นี้จากหน่วยความจำ
+            let weeklyTx = allTransactions.filter(t => t.timestamp?.toDate() >= startOfWeek);
+
+            // หากเป็นครูประจำชั้น ให้คำนวณผลลัพธ์เฉพาะของเด็กในชั้นเรียนตนเอง
+            if (isStaff && userRole === 'teacher') {
+                weeklyTx = weeklyTx.filter(t => t.class === assignedClass);
+            }
+
+            weeklyTx.forEach(t => {
+                if (t.type === 'ฝาก') deposit += t.amount;
+                else if (t.type === 'ถอน') withdraw += t.amount;
+            });
+
+            const net = deposit - withdraw;
+
+            const depEl = document.getElementById('summary-week-deposit');
+            const witEl = document.getElementById('summary-week-withdraw');
+            const netEl = document.getElementById('summary-week-net');
+
+            if (depEl) depEl.textContent = deposit.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            if (witEl) witEl.textContent = withdraw.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            if (netEl) netEl.textContent = net.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        };
+
         const updateSummaryTabInfo = () => {
             const badgeEl = document.getElementById('summary-balance-badge');
             const titleEl = document.getElementById('summary-balance-title');
@@ -1582,8 +1666,13 @@
         const renderCharts = () => {
             const ctxPie = document.getElementById('chart-pie-class').getContext('2d');
             const ctxBar = document.getElementById('chart-bar-class').getContext('2d');
+            
+            // ใหม่: ดึง Canvas สถิติมูลค่ายอดเงินฝากถอนรายเดือนมาใช้งาน
+            const ctxMonthly = document.getElementById('chart-monthly-transactions').getContext('2d');
+
             if (pieChart) pieChart.destroy();
             if (barChart) barChart.destroy();
+            if (monthlyTransactionChartInstance) monthlyTransactionChartInstance.destroy();
 
             let labels = [], data = [];
             // ชุดสีพาสเทลสำหรับกราฟ
@@ -1625,6 +1714,83 @@
                     options: { scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
                 });
             }
+
+            // ใหม่: สร้างกราฟแท่งประวัติฝากถอนเปรียบเทียบรายเดือนย้อนหลังในหน่วยความจำ (วิเคราะห์เชิงลึก)
+            const monthlyData = {};
+            
+            // จำกัดสิทธิ์การมองเห็นข้อมูลบนกราฟเฉพาะห้องของครูประจำชั้นคนนั้นๆ
+            let classFilteredTx = allTransactions;
+            if (isStaff && userRole === 'teacher') {
+                classFilteredTx = allTransactions.filter(t => t.class === assignedClass);
+            }
+
+            classFilteredTx.forEach(t => {
+                if (!t.timestamp) return;
+                const date = t.timestamp.toDate();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const monthKey = `${year}-${month}`;
+
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { deposits: 0, withdrawals: 0 };
+                }
+
+                if (t.type === 'ฝาก') {
+                    monthlyData[monthKey].deposits += t.amount;
+                } else if (t.type === 'ถอน') {
+                    monthlyData[monthKey].withdrawals += t.amount;
+                }
+            });
+
+            // เรียงลำดับแกนเวลาตามเดือนที่เกิดขึ้นจริง
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            
+            const monthlyLabels = sortedMonths.map(key => {
+                const [year, month] = key.split('-');
+                const monthIndex = parseInt(month) - 1;
+                const yearBE = parseInt(year) + 543; // แปลงพุทธศักราช (พ.ศ.)
+                return `${monthNames[monthIndex]} ${yearBE}`;
+            });
+
+            const monthlyDeposits = sortedMonths.map(key => monthlyData[key].deposits);
+            const monthlyWithdrawals = sortedMonths.map(key => monthlyData[key].withdrawals);
+
+            monthlyTransactionChartInstance = new Chart(ctxMonthly, {
+                type: 'bar',
+                data: {
+                    labels: monthlyLabels.slice(-6), // แสดงประวัติย้อนหลังสูงสุด 6 เดือนเพื่อความพาสเทลและสวยงาม
+                    datasets: [
+                        {
+                            label: 'ยอดฝากสะสม (บาท)',
+                            data: monthlyDeposits.slice(-6),
+                            backgroundColor: 'rgba(52, 211, 153, 0.7)', // เขียวพาสเทล
+                            borderColor: 'rgba(52, 211, 153, 1)',
+                            borderRadius: 8,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'ยอดถอนสะสม (บาท)',
+                            data: monthlyWithdrawals.slice(-6),
+                            backgroundColor: 'rgba(251, 113, 133, 0.7)', // ชมพูพาสเทล
+                            borderColor: 'rgba(251, 113, 133, 1)',
+                            borderRadius: 8,
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(241, 245, 249, 1)' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: 'Sarabun', weight: 'bold' } } }
+                    }
+                }
+            });
         };
 
         const showToast = (msg, type) => {
@@ -1641,3 +1807,4 @@
     </script>
 </body>
 </html>
+```
